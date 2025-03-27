@@ -77,13 +77,6 @@ typedef struct Graph {
     int n; 
     int **mat; // macierz sąsiedstwa
     Node *nodes; // wskaznik na wierszcholek 0 w grafie
-
-    // informacje uzyskane z pliku
-    int n_max; // max liczba wierszchokow w wierszu
-    int n_ind[]; // indkesy kolumn w ktorych są wierszcholki
-    int fir_val[]; // wartosci pierwszych wierscholkow w kazdym rzedzie
-    int edg[]; // tablica krawedzi 
-    int edg_ind[]; // indeksy pierwszych wezlow w grupach krawedzi
 } Graph;
 \end{lstlisting}
 W bezpośredniej generacji grafów uczestniczą funkcję podane poniżej:
