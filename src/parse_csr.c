@@ -8,7 +8,7 @@
 int get_number_of_nodes(char *a_r){
 
     int len = strlen(a_r);
-    int number_of_nodes = atoi(a_r[len-2]);
+    int number_of_nodes = a_r[len-2];
     return number_of_nodes;
 
 }
@@ -26,14 +26,14 @@ Graph *generate_graph_from_csrrg(char* filename){
     FILE *in = fopen(filename, "r");
     if(in == NULL){
         fprintf(stderr, "[!] there was a problem with loding a file%s", filename);
-        return;
+        return NULL;
     }
 
-    fscanf(in, sizeof(r), r);
-    fscanf(in, sizeof(positions), positions);
-    fscanf(in, sizeof(a_r), a_r);
-    fscanf(in, sizeof(edges), edges);
-    fscanf(in, sizeof(edges_offset), edges_offset);
+    fgets(r, sizeof(r), in);
+    fgets(positions, sizeof(positions), in);
+    fgets(a_r, sizeof(a_r), in);
+    fgets(edges, sizeof(edges), in);
+    fgets(edges_offset, sizeof(edges_offset), in);
 
     int rows = atoi(r);
 
@@ -92,6 +92,7 @@ void convert(char *edges, int *e_offset, Graph* g){
                 main_node = atoi(strtok(NULL, ";"));
             }
             token = strtok(NULL, ";");
+            add_node(g, main_node, atoi(token));
             
         }
         counter++;
