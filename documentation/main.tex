@@ -68,22 +68,30 @@ Kod źródłowy podzielony jest na następujące pliki i katalogi:
 Do przechowywania grafów, służą tak zdefiniowane struktury:
 \begin{lstlisting}[language=C, caption=struktura grafu]
 typedef struct Node {
-    int id;
-    int ne;
-    struct Node **links;
+    int id; // identyfikator wierszcholka, 0, 1, ..., n-1
+    int deg; // stopien, czyli liczba krawedzi wierscholka z innymi
+    struct Node **links; // wskaznik na sasiada
 } *Node;
 
 typedef struct Graph {
-    GraphType type;
-    int n;  
-    Node *nodes;
+    int n; 
+    int **mat; // macierz sąsiedstwa
+    Node *nodes; // wskaznik na wierszcholek 0 w grafie
+
+    // informacje uzyskane z pliku
+    int n_max; // max liczba wierszchokow w wierszu
+    int n_ind[]; // indkesy kolumn w ktorych są wierszcholki
+    int fir_val[]; // wartosci pierwszych wierscholkow w kazdym rzedzie
+    int edg[]; // tablica krawedzi 
+    int edg_ind[]; // indeksy pierwszych wezlow w grupach krawedzi
 } Graph;
 \end{lstlisting}
 W bezpośredniej generacji grafów uczestniczą funkcję podane poniżej:
 \begin{lstlisting}[language=C, caption=generacja]
 void link_nodes(Node, Node);
 Node create_Node(int);
-Graph * graph_init(int, GraphType type);
+Graph * graph_init(int);
+Graph ** part_graphs(int parts, int margin);
 \end{lstlisting}
 Zczytywanie z pliku o rosrzerzeniu csrrg oraz zczytywanie z macierzy.
 \begin{lstlisting}[language=C, caption=parsowanie i konwertowanie]
@@ -91,7 +99,26 @@ void parse_csrrg(FILE *in);
 void parse_mat(FILE *in);
 \end{lstlisting}
 
+\section{Użycie}
+Aplikacja jest uruchamiana z poziomu terminala, z parametrami podanymi w linii poleceń.
+\begin{lstlisting}[language=bash, caption= Przykład uruchomienia programu w terminalu]
+./partg graph.csrrg 3 20
+\end{lstlisting}
+gdzie 
+\begin{itemize}
+    \item \textbf{3} – liczba części, na które chcemy podzielić graf.
+    \item \textbf{10} – margines, czyli dopuszczalna różnica w liczbie wierzchołków między podgrafami, wyrażona w procentach (wartość w zakresie od 0 do 100\%).
+\end{itemize}
+
+\textbf{Skrajne przypadki marginesu}:
+\begin{itemize}
+    \item \textbf{Margines 0\%}: Oznacza, że wszystkie podgrafy muszą mieć dokładnie tę samą liczbę wierzchołków, bez żadnej dopuszczalnej różnicy.
+    \item \textbf{Margines 100\%}: Oznacza, że dopuszczalna różnica w liczbie wierzchołków między podgrafami może wynosić aż 100\% całkowitej liczby wierzchołków grafu, co daje pełną swobodę przy podziale (np. jeden podgraf może zawierać wszystkie wierzchołki, a inne podgrafy mogą być puste).
+\end{itemize}
+
+Jeśli nie podano tych parametrów, domyślnie graf będzie podzielony na \textbf{dwie części} z \textbf{marginesem 10\%}.
+
 \section{Podsumowanie}
-Aplikacja w podstawowej wersji zapewni użytkownikowi obsługę plików crrsg, i konwertowania sposobów zapisu grafów.
+Aplikacja w podstawowej wersji zapewni użytkownikowi obsługę plików csrrg, i konwertowania sposobów zapisu grafów.
 
 \end{document}
