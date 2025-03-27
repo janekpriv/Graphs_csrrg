@@ -32,8 +32,8 @@
 \tableofcontents
 
 \section{Wstęp}
-Aplikacja do tworzenia grafów pozwala użytkownikowi wczytywać grafy z pliku 
-o rozszerzeniu csrrg, a następnie wykonywać na nich pożądane operacje.
+Nasza aplikacja pozwala użytkownikowi wczytywać grafy z pliku 
+o rozszerzeniu csrrg, a następnie dzielić graf na dowolną liczbę częśći.
 
 \section{Technologie}
 Aplikacja została zbudowana przy użyciu następujących technologii:
@@ -47,7 +47,6 @@ Aplikacja została zbudowana przy użyciu następujących technologii:
 Aplikacja składa się z modułów:
 \begin{itemize}
     \item Moduł generowania grafów
-    \item Moduł wizualizacji
     \item Moduł analizy grafów
     \item Moduł wczytywania grafów z pliku
 \end{itemize}
@@ -68,11 +67,6 @@ Kod źródłowy podzielony jest na następujące pliki i katalogi:
 \section{Przykładowy kod}
 Do przechowywania grafów, służą tak zdefiniowane struktury:
 \begin{lstlisting}[language=C, caption=struktura grafu]
-typedef enum {
-    UNDIRECTED,
-    DIRECTED
-} GraphType;
-
 typedef struct Node {
     int id;
     int ne;
