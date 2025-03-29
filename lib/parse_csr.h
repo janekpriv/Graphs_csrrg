@@ -7,6 +7,6 @@ void parse(char* filename);
 Graph *generate_graph_from_csrrg(char* filname);
 int get_number_of_nodes(char *a_r);
 int *tokenize(char *edges_offset, int c_count);
-void convert(char *edges, int *e_offset, Graph* g);
+void convert(char *edges, int *e_offset, Graph* g, int c_count);
 
 #endif

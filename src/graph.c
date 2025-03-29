@@ -87,17 +87,16 @@ void free_graph(Graph *g) {
     free(g);
 }
 
-void add_node(Graph *g, int main_node, int secondary_node){
+int add_node(Graph *g, int main_node, int secondary_node, int c){
     
     int i;
-    int c = 0;;
-
-
+    int added_nodes = 0;
     Node node_1, node_2;
     if ((i = contains(main_node, g->nodes, c)) == -1){
         node_1 = create_Node(main_node);
         g->nodes[c] = node_1;
         g->nodes[c++]->links =malloc(((g->n)-1)* sizeof(struct Node *));
+        added_nodes++;
     }else{
         node_1 = g->nodes[i];
     }
@@ -105,13 +104,14 @@ void add_node(Graph *g, int main_node, int secondary_node){
         node_2 = create_Node(secondary_node);
         g->nodes[c] =node_2;
         g->nodes[c++]->links =malloc(((g->n)-1)* sizeof(struct Node *));
+        added_nodes++;
     }else{
         node_2 = g->nodes[i];
     }
     if(node_1 && node_2){
         link_nodes(node_1, node_2);
         link_nodes(node_2, node_1);
-    }
-
+    }   
+    return added_nodes;
 
 }
