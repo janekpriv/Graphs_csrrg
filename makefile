@@ -11,3 +11,5 @@ $(TARGET): $(OBJ)
 %.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+clean:
+	del /Q *.o a.out program.exe 2>nul || exit 0
