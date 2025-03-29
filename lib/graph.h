@@ -24,5 +24,5 @@ void print_list_repr(Graph*);
 void free_graph(Graph*);
 Graph * graph_init(int, GraphType type);
 void link_nodes(Node, Node);
-void add_node(Graph*, int, int);
+int add_node(Graph*, int, int, int);
 #endif
