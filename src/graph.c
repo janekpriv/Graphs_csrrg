@@ -111,6 +111,7 @@ int add_node(Graph *g, int main_node, int secondary_node, int c){
     if(node_1 && node_2){
         link_nodes(node_1, node_2);
         link_nodes(node_2, node_1);
+       // printf("adding %d - %d\n", main_node, secondary_node);
     }   
     return added_nodes;
 
