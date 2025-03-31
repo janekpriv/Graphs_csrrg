@@ -43,24 +43,31 @@ Graph *generate_graph_from_csrrg(char* filename){
     getline(&edges_offset, &len, in);
 
 
-    int rows = atoi(r);
+    int cols = atoi(r);
 
     int e_count = count_numbers(edges_l);
     int id_count = count_numbers(edges_offset);
+    int positions_count = count_numbers(positions);
+    int in_row_count = count_numbers(a_r);
 
     int *edges = tokenize(edges_l, e_count);
     int *e_id = tokenize(edges_offset, id_count);
+    int *positions_l = tokenize(positions, positions_count);
+    int *in_row = tokenize(a_r, in_row_count);
+
     int nodes_count = get_number_of_nodes(a_r);
 
     Graph *g = graph_init(nodes_count, UNDIRECTED);
 
     convert(e_id, edges, e_count, g);
+    matrix_visualisation(cols, in_row_count, positions_l, in_row);
 
     return g;
 }
 
-int *tokenize(char *s, int len){
+int *tokenize(char *line, int len){
 
+    char *s = strdup(line);
     char *token;
     int counter = 0;
     int *arr = malloc(sizeof(int)*len);
@@ -71,7 +78,6 @@ int *tokenize(char *s, int len){
     while(token!=NULL){
         arr[counter] = atoi(token);
         token = strtok(NULL, ";");
-        printf("%d\n",arr[counter]);
         counter++;
     }
     return arr;
@@ -111,8 +117,38 @@ int count_numbers(char *line){
         token = strtok(NULL, ";");
         counter ++;
     }
-    printf("counter: %d\n", counter);
     return counter;
     
+
+}
+
+void matrix_visualisation(int cols, int in_row_count, int *positions, int *in_row){
+
+    FILE *out = fopen("output/matrix.txt", "w");
+    if(out == NULL){
+        fprintf(stderr, "unable to open the output file, terminating");
+    }
+
+    int rows = in_row_count -1;
+    int c = 0;
+    int o_c = 0;
+
+    for(int i = 0; i<rows; i++){
+        int ammount = 0;
+        fprintf(out, "[");
+        for(int j = 0; j<cols; j++){
+            //printf("positions[c] = %d, in_row = %d j == %d\n", positions[c], (in_row[i+1]-in_row[i]), j);
+            if(j == positions[c] && ammount < (in_row[i+1]-in_row[i])){
+                fprintf(out, "1. ");
+                ammount++;
+                c++;
+                o_c++;
+            }else{
+                fprintf(out, "0. ");
+            }
+        }
+        fprintf(out, "]\n");
+    }
+    //printf("only %g percent of a graph are nodes\n", (o_c/(rows*cols))*100);
 
 }
