@@ -8,7 +8,5 @@
 int main(int argc, char **argv){
 
     Graph *g = generate_graph_from_csrrg(argv[1]);
-    print_list_repr(g);
-    printf("printed\n");
 
 }
