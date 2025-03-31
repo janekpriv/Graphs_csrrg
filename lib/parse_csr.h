@@ -8,5 +8,6 @@ Graph *generate_graph_from_csrrg(char* filname);
 int get_number_of_nodes(char *a_r);
 int *tokenize(char *edges_offset, int len);
 void convert(int *e_id, int *edges, int e_count, Graph *g);
+void matrix_visualisation(int cols, int in_row_count, int *positions, int *in_row);
 
 #endif
