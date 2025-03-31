@@ -67,6 +67,7 @@ void print_list_repr(Graph *g){
         printf("\n");
         fprintf(out,"\n");
     }
+    fclose(out);
 }
 
 
