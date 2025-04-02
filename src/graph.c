@@ -55,16 +55,16 @@ void print_list_repr(Graph *g){
         printf("Graph is NULL\n");
         return;
     }
-    printf("Adjacency List Representation:\n");
+    //printf("Adjacency List Representation:\n");
     for (int i = 0; i < g->n; i++) {
-        printf("%d: ", g->nodes[i]->id);
+        //printf("%d: ", g->nodes[i]->id);
         fprintf(out,"%d: ", g->nodes[i]->id);
         for (int j = 0; j < g->nodes[i]->ne; j++) {
-            printf("%d ", g->nodes[i]->links[j]->id);
+            //printf("%d ", g->nodes[i]->links[j]->id);
             fprintf(out, "%d ", g->nodes[i]->links[j]->id);
     
         }
-        printf("\n");
+        //printf("\n");
         fprintf(out,"\n");
     }
     fclose(out);
@@ -84,21 +84,17 @@ void print_adj_matrix_repr(Graph *g){
     // nodes and links MUST be sorted for it to work (sort_graph handles that)
     for (int i = 0; i < g->n; i++){
         int k = 0;
-        printf("[");
         fprintf(out, "[");
         int ne = g->nodes[i]->ne;
         for (int j = 0; j < g->n; j++){
             if (k < ne && j == g->nodes[i]->links[k]->id){
-                printf("1. ");
                 fprintf(out, "1. ");
                 k++;
             }
             else {
-                printf("0. ");
                 fprintf(out, "0. ");
             }
         }
-        printf("]\n");
         fprintf(out, "]\n");
     }   
 }

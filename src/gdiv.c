@@ -77,30 +77,34 @@ int main (int argc, char **argv) {
     
     int cols; 
     assert(sscanf(l1, "%d", &cols) == 1);
+    fprintf(gr_info, "cols = %d\n", cols);
     printf("cols = %d\n", cols);
     
 
     int nodes = count_numbers(l2);
     assert(nodes > 0);
+    fprintf(gr_info, "nodes = %d\n", nodes);
     printf("nodes = %d\n", nodes);
     Graph *g = graph_init(nodes, UNDIRECTED);
 
 
     int rows = count_numbers(l3);
     assert(rows > 0);
+    fprintf(gr_info, "rows = %d\n", rows);
     printf("rows = %d\n", rows);
+    
 
     int edg_size = count_numbers(l4); 
     // edges array
     int * edges = convert_to_arr(l4, edg_size);
     assert(edges != NULL);
-    print_arr(edges, edg_size);
+    //print_arr(edges, edg_size);
 
     int  ind_size = count_numbers(l5);
     // main nodes indices array
     int * indices = convert_to_arr(l5, ind_size);
     assert(indices != NULL);
-    print_arr(indices, ind_size);
+    //print_arr(indices, ind_size);
 
     FILE *out = fopen("./output/output.txt", "w");
 
@@ -129,7 +133,8 @@ int main (int argc, char **argv) {
 
     }
 
-    fprintf(gr_info, "Number of edges: %d\n", n_edg);
+    fprintf(gr_info, "edges: %d\n", n_edg);
+    printf("edges: %d\n", n_edg);
     fclose(gr_info);
     sort_graph(g);
     print_adj_matrix_repr(g);
