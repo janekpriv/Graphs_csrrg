@@ -84,18 +84,19 @@ void print_adj_matrix_repr(Graph *g){
     // nodes and links MUST be sorted for it to work (sort_graph handles that)
     for (int i = 0; i < g->n; i++){
         int k = 0;
-        fprintf(out, "[");
+        //fprintf(out, "[");
         int ne = g->nodes[i]->ne;
         for (int j = 0; j < g->n; j++){
             if (k < ne && j == g->nodes[i]->links[k]->id){
-                fprintf(out, "1. ");
+                fprintf(out, "1 ");
                 k++;
             }
             else {
-                fprintf(out, "0. ");
+                fprintf(out, "0 ");
             }
         }
-        fprintf(out, "]\n");
+        fprintf(out, "\n");
+        //fprintf(out, "]\n");
     }   
 }
 
