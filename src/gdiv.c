@@ -45,6 +45,8 @@ void print_arr(int *arr, int arr_size){
 
 
 
+
+
 int main (int argc, char **argv) {
     FILE *in = argc == 2 ? fopen(argv[1], "r") : NULL;
     if(in == NULL){
@@ -66,34 +68,48 @@ int main (int argc, char **argv) {
         free(l1); free(l2); free(l3); free(l4); free(l5);
         return 1;
     }
+
+    FILE * gr_info = fopen("./output/graph_info.txt", "w");
+    if (gr_info == NULL){
+        fprintf(stderr, "[!] there was a problem with loading a file \"graph_info\"\n");
+        return 1;
+    }
     
     int cols; 
     assert(sscanf(l1, "%d", &cols) == 1);
+    fprintf(gr_info, "cols = %d\n", cols);
     printf("cols = %d\n", cols);
+    
 
     int nodes = count_numbers(l2);
     assert(nodes > 0);
+    fprintf(gr_info, "nodes = %d\n", nodes);
     printf("nodes = %d\n", nodes);
     Graph *g = graph_init(nodes, UNDIRECTED);
 
 
     int rows = count_numbers(l3);
     assert(rows > 0);
+    fprintf(gr_info, "rows = %d\n", rows);
     printf("rows = %d\n", rows);
+    
 
     int edg_size = count_numbers(l4); 
     // edges array
     int * edges = convert_to_arr(l4, edg_size);
     assert(edges != NULL);
-    print_arr(edges, edg_size);
+    //print_arr(edges, edg_size);
 
     int  ind_size = count_numbers(l5);
     // main nodes indices array
     int * indices = convert_to_arr(l5, ind_size);
     assert(indices != NULL);
-    print_arr(indices, ind_size);
+    //print_arr(indices, ind_size);
 
     FILE *out = fopen("./output/output.txt", "w");
+
+    int n_edg = 0; // number of edges
+
 
     int size = 0;
     int main_node, secondary_node;
@@ -112,10 +128,16 @@ int main (int argc, char **argv) {
             //printf("s = %d\n", secondary_node);
             size += add_node(g, main_node, secondary_node, size);
             fprintf(out,"connect %d to %d\n", main_node, secondary_node);
+            n_edg++;
         }
 
     }
 
+    fprintf(gr_info, "edges: %d\n", n_edg);
+    printf("edges: %d\n", n_edg);
+    fclose(gr_info);
+    sort_graph(g);
+    print_adj_matrix_repr(g);
     print_list_repr(g);
 
     free(l1);
@@ -123,4 +145,5 @@ int main (int argc, char **argv) {
     free(l3);
     free(l4);
     free(l5);
+    
 }

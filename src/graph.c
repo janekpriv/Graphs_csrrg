@@ -55,21 +55,75 @@ void print_list_repr(Graph *g){
         printf("Graph is NULL\n");
         return;
     }
-    printf("Adjacency List Representation:\n");
+    //printf("Adjacency List Representation:\n");
     for (int i = 0; i < g->n; i++) {
-        printf("%d: ", g->nodes[i]->id);
+        //printf("%d: ", g->nodes[i]->id);
         fprintf(out,"%d: ", g->nodes[i]->id);
         for (int j = 0; j < g->nodes[i]->ne; j++) {
-            printf("%d ", g->nodes[i]->links[j]->id);
+            //printf("%d ", g->nodes[i]->links[j]->id);
             fprintf(out, "%d ", g->nodes[i]->links[j]->id);
     
         }
-        printf("\n");
+        //printf("\n");
         fprintf(out,"\n");
     }
     fclose(out);
 }
 
+void print_adj_matrix_repr(Graph *g){
+    FILE *out = fopen("output/adjm.txt", "w");
+    if(out == NULL){
+        fprintf(stderr, "unable to open the output file, terminating");
+    }
+
+    if (g == NULL) {
+        printf("Graph is NULL\n");
+        return;
+    }
+    
+    // nodes and links MUST be sorted for it to work (sort_graph handles that)
+    for (int i = 0; i < g->n; i++){
+        int k = 0;
+        fprintf(out, "[");
+        int ne = g->nodes[i]->ne;
+        for (int j = 0; j < g->n; j++){
+            if (k < ne && j == g->nodes[i]->links[k]->id){
+                fprintf(out, "1. ");
+                k++;
+            }
+            else {
+                fprintf(out, "0. ");
+            }
+        }
+        fprintf(out, "]\n");
+    }   
+}
+
+
+int cmp(const void *a, const void *b) {
+    return ((*(struct Node**)a)->id) - ((*(struct Node**)b)->id);
+}
+
+// cleaner  but longer version of cmp
+/*
+int cmp(const void *a, const void *b){
+    const Node nodeA = *((const Node*)a);
+    const Node nodeB = *((const Node*)b);
+    return nodeA->id - nodeB->id;
+}
+*/
+void sort_graph(Graph *g){
+    
+    qsort(g->nodes, g->n, sizeof(Node), cmp);
+    
+
+    for (int i = 0; i < g->n; i++){
+        int ne = g->nodes[i]->ne;
+        if (ne > 0) {
+            qsort(g->nodes[i]->links, ne, sizeof(Node), cmp);
+        }
+    }
+}
 
 void free_graph(Graph *g) {
     if (!g) return;

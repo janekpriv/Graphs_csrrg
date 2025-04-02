@@ -43,7 +43,7 @@ Graph *generate_graph_from_csrrg(char* filename){
     getline(&edges_offset, &len, in);
 
 
-    int cols = atoi(r);
+    int cols = atoi(r) - 1;  // actual number of columns is n-1
 
     int e_count = count_numbers(edges_l);
     int id_count = count_numbers(edges_offset);
