@@ -25,4 +25,6 @@ void free_graph(Graph*);
 Graph * graph_init(int, GraphType type);
 void link_nodes(Node, Node);
 int add_node(Graph*, int, int, int);
+int edge_count(Graph*);
+int edge_exists(Graph*, int, int);
 #endif
