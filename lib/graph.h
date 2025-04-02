@@ -28,4 +28,6 @@ int add_node(Graph*, int, int, int);
 void print_adj_matrix_repr(Graph *g);
 int cmp(const void *a, const void *b);
 void sort_graph(Graph *g);
+int edge_count(Graph*);
+int edge_exists(Graph*, int, int);
 #endif
