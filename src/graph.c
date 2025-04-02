@@ -117,3 +117,31 @@ int add_node(Graph *g, int main_node, int secondary_node, int c){
     return added_nodes;
 
 }
+
+int edge_count(Graph*g){
+
+    int edges = 0;
+
+    for(int i = 0; i<g->n; i++){
+        if(g->nodes[i] != NULL){
+            edges +=g->nodes[i]->ne;
+        }
+    }
+
+    return edges/2; //undirected graph
+
+}
+
+int edge_exists(Graph *g, int index1, int index2) {
+    
+    Node node1 = g->nodes[index1];
+    if (!node1) return 0; 
+
+    for (int i = 0; i < node1->ne; i++) {
+        if (node1->links[i]->id == index2) {
+            return 1; 
+        }
+    }
+    
+    return 0; 
+}
