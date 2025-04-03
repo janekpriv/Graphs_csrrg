@@ -6,6 +6,45 @@
 #include "../lib/graph.h"
 
 
+// compute local modularity to optimize runtime
+// currently not used
+int compute_community_sum(Graph *g, int *communities, int community){
+
+    int community_sum = 0;
+    for(int i = 0; i<g->n; i++){
+        if(communities[i] == community){
+            community_sum+=g->nodes[i]->ne;
+        }
+    }
+
+}
+
+
+double get_delta_modularity(Graph *g, int new_community, int *degrees, int edge_count, int *communities, int id){
+
+    int old_community = communities[id];
+
+    if(old_community == new_community) return 0;
+
+    int k = g->nodes[id]->ne;
+    int k_new = degrees[new_community];
+    int k_old = degrees[old_community];
+
+    //int e_sum_old = compute_community_sum(g, communities, new_community);
+    //int e_sum_new = compute_community_sum(g, communities, new_community);
+
+    
+    //double quality = (double)(e_sum_old - k_new - e_sum_new + k_old)/(2*edge_count);
+    double quality = (double)(k_new - k_old) / (2 * edge_count);
+    printf("old community: %d new community: %dk_new:%d k_old:%d k: %d quality: %g\n",old_community, new_community, k_new, k_old, k, quality);
+
+    return quality;
+
+}
+
+
+
+
 double get_modularity(int *communities, Graph *g){
 
     int n = g->n;
@@ -36,7 +75,7 @@ double get_modularity(int *communities, Graph *g){
 
     double modularity = quality/(2.0*number_of_edges);
 
-    //printf("Modularity: %g\n", modularity);
+    printf("Modularity: %g\n", modularity);
 
     return modularity;
 
@@ -72,6 +111,14 @@ void louvian_clustering(Graph *g){
     int *communities = malloc( sizeof(int) * n);
     int tmp_community;
 
+    int *degrees = malloc(sizeof(int)*n);
+        for(int i = 0; i<n; i++){
+            degrees[i] = g->nodes[i]->ne;
+            printf("node %d has %d degrees\n", i, degrees[i]);
+        }
+    
+
+
     for(int i = 0; i<n; i++) communities[i] = i;
 
     bool improvement = true;
@@ -81,24 +128,36 @@ void louvian_clustering(Graph *g){
         for(int i = 0; i<n; i++){
             int best_community = communities[i];
             double best_modularity = -1;
-            for(int j = 0; j<n; j++){
-                if(edge_exists(g, i,j)){
-                    tmp_community = communities[i];
-                    communities[i] = communities[j];
+            for(int j = 0; j<g->nodes[i]->ne; j++){
+                //if(edge_exists(g, i,j) && i != j){
+                    int neighbour = g->nodes[i]->links[j]->id;
+                    tmp_community = communities[neighbour];
 
+                    double local_modularity = get_delta_modularity(g, tmp_community, degrees, number_of_edges, communities, i);
                     double modularity = get_modularity(communities, g);
-                    //printf("modularity: %d\n", modularity);
-                    if(modularity>best_modularity){
-                        //printf("modularity has improved\n");
-                        printf("i: %d\n", i);
-                        best_modularity = modularity;
+                    printf("modularity: %g\n", local_modularity);
+                    if(local_modularity>best_modularity){
+                       // printf("modularity has improved\n");
+                        // printf("i: %d\n", i);
+                        //printf("communities %d node %d\n", communities[i],i);
+                        best_modularity = local_modularity;
                         improvement = true;
-                        best_community = communities[i];
+                        best_community = tmp_community;
                     }
-                }
-                communities[i] = tmp_community;
+                //}
+                //communities[i] = tmp_community;
+
             }
-            communities[i] = best_community;
+            if (best_community != communities[i]) {
+                if (degrees[communities[i]] >= g->nodes[i]->ne) {  
+                    degrees[communities[i]] -= g->nodes[i]->ne;
+                }
+            
+                communities[i] = best_community;
+            
+                degrees[best_community] += g->nodes[i]->ne;
+            }
+            //communities[i] = best_community;
         }
     }
 
