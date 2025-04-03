@@ -136,7 +136,7 @@ void louvian_clustering(Graph *g){
                     double local_modularity = get_delta_modularity(g, tmp_community, degrees, number_of_edges, communities, i);
                     double modularity = get_modularity(communities, g);
                     printf("modularity: %g\n", local_modularity);
-                    if(local_modularity>best_modularity){
+                    if(modularity>best_modularity){
                        // printf("modularity has improved\n");
                         // printf("i: %d\n", i);
                         //printf("communities %d node %d\n", communities[i],i);
