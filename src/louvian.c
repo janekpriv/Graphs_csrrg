@@ -7,8 +7,8 @@
 #include "../lib/graph.h"
 
 #define MAX_ITERATIONS 100000
-#define MIN_ITERATIONS 100  // Limit iteracji
-#define MODULARITY_THRESHOLD 0.0001  // Minimalna poprawa modularności
+#define MIN_ITERATIONS 100  
+#define MODULARITY_THRESHOLD 0.00001  
 
 
 void shuffle(int *array, int n) {
@@ -35,7 +35,6 @@ double get_delta_modularity(Graph *g, int new_community, int *community_degrees,
     return quality;
 }
 
-// Funkcja obliczająca modularność grafu
 double get_modularity(int *communities, Graph *g, int *community_degrees) {
     int n = g->n;
     int number_of_edges = edge_count(g);
@@ -54,7 +53,7 @@ double get_modularity(int *communities, Graph *g, int *community_degrees) {
     return quality / (2.0 * number_of_edges);
 }
 
-// Implementacja algorytmu Louvain
+
 void louvian_clustering(Graph *g) {
     int number_of_edges = edge_count(g);
     int n = g->n;
@@ -91,7 +90,8 @@ void louvian_clustering(Graph *g) {
 
                 double local_modularity = get_delta_modularity(g, tmp_community, community_degrees, number_of_edges, communities, i);
                 modularity = get_modularity(communities, g, community_degrees);
-                if (modularity > best_modularity || (rand() % 10 < 2)) {
+                
+                if (local_modularity > best_modularity || (rand() % 10 < 2)) {
                     best_modularity = local_modularity;
                     best_community = tmp_community;
                     improvement = true;
@@ -110,9 +110,9 @@ void louvian_clustering(Graph *g) {
 
 
         double new_modularity = get_modularity(communities, g, community_degrees);
-        // if (new_modularity - prev_modularity < MODULARITY_THRESHOLD) {
-        //     break;
-        // }
+        if (new_modularity - prev_modularity < MODULARITY_THRESHOLD) {
+            break;
+        }
         prev_modularity = new_modularity;
         iterations++;
     }
