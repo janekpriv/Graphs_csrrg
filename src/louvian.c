@@ -9,7 +9,6 @@
 double get_modularity(int *communities, Graph *g){
 
     int n = g->n;
-
     int number_of_edges  = edge_count(g);
 
     double quality = 0;
@@ -25,7 +24,7 @@ double get_modularity(int *communities, Graph *g){
                 A = edge_exists(g, i, j);
 
                 quality += (double)A - (double)(k1*k2)/(double)(2.0* number_of_edges);
-
+                
                 //printf("quality: %g, k1: %d, k2, %d\n", quality, k1, k2);
 
             }
@@ -63,6 +62,8 @@ int count_communities(int *communities, int n_number){
     return c;
 
 }
+#include <time.h>
+double time1, timedif;
 
 void louvian_clustering(Graph *g){
 
@@ -72,38 +73,62 @@ void louvian_clustering(Graph *g){
     int *communities = malloc( sizeof(int) * n);
     int tmp_community;
 
+    time1 = (double) clock(); 
+
+    time1 = time1 / CLOCKS_PER_SEC;
     for(int i = 0; i<n; i++) communities[i] = i;
 
     bool improvement = true;
-
+    double best_modularity = -1;
     while(improvement){
         improvement = false;
         for(int i = 0; i<n; i++){
             int best_community = communities[i];
-            double best_modularity = -1;
-            for(int j = 0; j<n; j++){
-                if(edge_exists(g, i,j)){
+            for(int j = 0; j<g->nodes[i]->ne; j++){
                     tmp_community = communities[i];
-                    communities[i] = communities[j];
+                    int neighbor_comm = communities[g->nodes[i]->links[j]->id];
 
+                    if (neighbor_comm == tmp_community)
+                        continue; // no point in trying same community
+                    communities[i] = neighbor_comm ;
                     double modularity = get_modularity(communities, g);
-                    //printf("modularity: %d\n", modularity);
+                    printf("modularity: %lf  best modularity %lf\n", modularity, best_modularity);
                     if(modularity>best_modularity){
-                        //printf("modularity has improved\n");
-                        printf("i: %d\n", i);
+                        printf("modularity has improved\n");
+                        //printf("i: %d\n", i);
                         best_modularity = modularity;
                         improvement = true;
-                        best_community = communities[i];
+                        best_community = neighbor_comm;
                     }
-                }
                 communities[i] = tmp_community;
             }
             communities[i] = best_community;
         }
     }
 
+    timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
+    printf("The elapsed time is %f seconds\n", timedif);
     int communities_count = count_communities(communities, n);
 
+    
+    int *parts = malloc(sizeof(int)*communities_count);
+    for (int i = 0; i < communities_count; i++) parts[i] = -1;
+
+    int k = 0;
+    for(int i = 0; i<n && k <communities_count; i++){
+        int found = 0;
+        for (int j = 0; j <k; j++){
+            if (parts[j] == communities[i])
+                found = 1;
+        }
+        if (!found)
+            parts[k++] = communities[i];
+    }
+    for (int i = 0; i < communities_count; i++)
+    printf("%d ", parts[i]);
+        printf("\n");
+
+    /*
     for(int i = 0; i<communities_count; i++){
 
         printf("Graph has been partitioned to %d communities:\n", communities_count);
@@ -119,7 +144,7 @@ void louvian_clustering(Graph *g){
             }
         }
 
-    }
+    }*/
 
 
 }
