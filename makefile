@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
 TARGET = program
-OBJ = graph.o parse_csr.o main.o
+OBJ = graph.o parse_csr.o main.o louvian.o
 
 all: $(TARGET)
 

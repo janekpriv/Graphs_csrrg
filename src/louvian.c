@@ -1,86 +1,155 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include<time.h>
 
 #include "../lib/louvian.h"
 #include "../lib/graph.h"
 
+#define MAX_ITERATIONS 100000
+#define MIN_ITERATIONS 100  // Limit iteracji
+#define MODULARITY_THRESHOLD 0.0001  // Minimalna poprawa modularności
 
-// compute local modularity to optimize runtime
-// currently not used
-int compute_community_sum(Graph *g, int *communities, int community){
 
-    int community_sum = 0;
-    for(int i = 0; i<g->n; i++){
-        if(communities[i] == community){
-            community_sum+=g->nodes[i]->ne;
-        }
+void shuffle(int *array, int n) {
+    srand(time(NULL));
+    for (int i = n - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
     }
-
 }
 
 
-double get_delta_modularity(Graph *g, int new_community, int *degrees, int edge_count, int *communities, int id){
-
+double get_delta_modularity(Graph *g, int new_community, int *community_degrees, int number_of_edges, int *communities, int id) {
     int old_community = communities[id];
 
-    if(old_community == new_community) return 0;
+    if (old_community == new_community) return 0;
 
-    int k = g->nodes[id]->ne;
-    int k_new = degrees[new_community];
-    int k_old = degrees[old_community];
+    int k = g->nodes[id]->ne;  
+    int k_new = community_degrees[new_community];
+    int k_old = community_degrees[old_community];
 
-    //int e_sum_old = compute_community_sum(g, communities, new_community);
-    //int e_sum_new = compute_community_sum(g, communities, new_community);
-
-    
-    //double quality = (double)(e_sum_old - k_new - e_sum_new + k_old)/(2*edge_count);
-    double quality = (double)(k_new - k_old) / (2 * edge_count);
-    printf("old community: %d new community: %dk_new:%d k_old:%d k: %d quality: %g\n",old_community, new_community, k_new, k_old, k, quality);
-
+    double quality = (double)(k_new - k_old) / (2 * number_of_edges);
     return quality;
-
 }
 
-
-
-
-double get_modularity(int *communities, Graph *g){
-
+// Funkcja obliczająca modularność grafu
+double get_modularity(int *communities, Graph *g, int *community_degrees) {
     int n = g->n;
+    int number_of_edges = edge_count(g);
+    double quality = 0.0;
 
-    int number_of_edges  = edge_count(g);
-
-    double quality = 0;
-    int k1, k2, A;
-    for(int i = 0; i<n; i++){
-        for(int j = 0; j<n; j++){
-            // check if node is in the same community 
-            if(communities[i] == communities[j]){
-
-                k1 = g->nodes[i]->ne;
-                k2 = g->nodes[j]->ne;
-
-                A = edge_exists(g, i, j);
-
-                quality += (double)A - (double)(k1*k2)/(double)(2.0* number_of_edges);
-
-                //printf("quality: %g, k1: %d, k2, %d\n", quality, k1, k2);
-
+    for (int i = 0; i < n; i++) {
+        int k1 = g->nodes[i]->ne;
+        for (int j = 0; j < g->nodes[i]->ne; j++) {
+            int neighbour = g->nodes[i]->links[j]->id;
+            if (communities[i] == communities[neighbour]) {
+                quality += 1.0 - ((double)(k1 * community_degrees[communities[neighbour]]) / (2.0 * number_of_edges));
             }
-
-
         }
     }
 
-    double modularity = quality/(2.0*number_of_edges);
-
-    printf("Modularity: %g\n", modularity);
-
-    return modularity;
-
+    return quality / (2.0 * number_of_edges);
 }
 
+// Implementacja algorytmu Louvain
+void louvian_clustering(Graph *g) {
+    int number_of_edges = edge_count(g);
+    int n = g->n;
+    int *communities = malloc(sizeof(int) * n);
+    int *community_degrees = malloc(sizeof(int) * n);
+    int *indices = malloc(sizeof(int)*n);
+
+    for (int i = 0; i < n; i++) indices[i] = i;
+    
+    for (int i = 0; i < n; i++) {
+        communities[i] = i;
+        community_degrees[i] = g->nodes[i]->ne;
+        printf("community degree: %d\n", community_degrees[i]);
+    }
+
+    bool improvement = true;
+    int iterations = 0;
+    double prev_modularity = -1.0;
+    srand(time(NULL));
+
+    while (improvement && iterations<MAX_ITERATIONS) {
+        improvement = false;
+        double modularity = get_modularity(communities, g, community_degrees);
+        shuffle(indices, n);
+
+        for (int in = 0; in < n; in++) {
+            int i = indices[in];
+            int best_community = communities[i];
+            double best_modularity = -1;
+
+            for (int j = 0; j < g->nodes[i]->ne; j++) {
+                int neighbour = g->nodes[i]->links[j]->id;
+                int tmp_community = communities[neighbour];
+
+                double local_modularity = get_delta_modularity(g, tmp_community, community_degrees, number_of_edges, communities, i);
+                modularity = get_modularity(communities, g, community_degrees);
+                if (modularity > best_modularity || (rand() % 10 < 2)) {
+                    best_modularity = local_modularity;
+                    best_community = tmp_community;
+                    improvement = true;
+                }
+            }
+            //printf("Before: Community %d has degree %d\n", communities[i], community_degrees[communities[i]]);
+            
+            if (best_community != communities[i]) {
+                
+                community_degrees[communities[i]] -= g->nodes[i]->ne;
+                communities[i] = best_community;
+                community_degrees[best_community] += g->nodes[i]->ne;
+            }
+            //printf("After: Community %d has degree %d\n", best_community, community_degrees[best_community]);
+        }
+
+
+        double new_modularity = get_modularity(communities, g, community_degrees);
+        // if (new_modularity - prev_modularity < MODULARITY_THRESHOLD) {
+        //     break;
+        // }
+        prev_modularity = new_modularity;
+        iterations++;
+    }
+    printf("algorithm ended after %d iterations\n", iterations);
+
+    int communities_count = count_communities(communities, n);
+    printf("Communities count: %d\n",communities_count);
+
+    printf("Graph has been partitioned to %d communities:\n", communities_count);
+
+    int *partitioned_communities = unique_communities(g, communities, communities_count);
+
+    for(int i = 0; i<communities_count; i++){
+
+        int c = 0;
+        printf("Community %d:\n", i);
+        
+        for(int j = 0; j<n; j++){
+            
+            if(communities[j] == partitioned_communities[i]){
+                
+                
+                if(c==10){
+                    printf("\n");
+                    c= 0;
+                }
+                printf("%d ", j);
+                c++;
+            }
+        }
+        printf("\n");
+
+    }
+
+    free(communities);
+    free(community_degrees);
+}
 int count_communities(int *communities, int n_number){
 
     int * unique_c = malloc(sizeof(int)* n_number);
@@ -99,87 +168,30 @@ int count_communities(int *communities, int n_number){
             c++;
         }
     }
+    free(unique_c);
     return c;
 
 }
 
-void louvian_clustering(Graph *g){
+int *unique_communities(Graph *g, int *communities, int communities_count){
 
-    int number_of_edges  = edge_count(g);
-    printf("edges: %d\n", number_of_edges);
-    int n = g->n;
-    int *communities = malloc( sizeof(int) * n);
-    int tmp_community;
+    int *partitioned_communities = malloc(sizeof(int)* communities_count);
+    int c =0;
 
-    int *degrees = malloc(sizeof(int)*n);
-        for(int i = 0; i<n; i++){
-            degrees[i] = g->nodes[i]->ne;
-            printf("node %d has %d degrees\n", i, degrees[i]);
+    for(int i = 0; i<g->n; i++){
+        int is_unique =1;
+        for(int j = 0; j<communities_count; j++){
+            if(communities[i]==partitioned_communities[j]){
+                is_unique = 0;
+                break;
+            }
         }
-    
 
-
-    for(int i = 0; i<n; i++) communities[i] = i;
-
-    bool improvement = true;
-
-    while(improvement){
-        improvement = false;
-        for(int i = 0; i<n; i++){
-            int best_community = communities[i];
-            double best_modularity = -1;
-            for(int j = 0; j<g->nodes[i]->ne; j++){
-                //if(edge_exists(g, i,j) && i != j){
-                    int neighbour = g->nodes[i]->links[j]->id;
-                    tmp_community = communities[neighbour];
-
-                    double local_modularity = get_delta_modularity(g, tmp_community, degrees, number_of_edges, communities, i);
-                    double modularity = get_modularity(communities, g);
-                    printf("modularity: %g\n", local_modularity);
-                    if(modularity>best_modularity){
-                       // printf("modularity has improved\n");
-                        // printf("i: %d\n", i);
-                        //printf("communities %d node %d\n", communities[i],i);
-                        best_modularity = local_modularity;
-                        improvement = true;
-                        best_community = tmp_community;
-                    }
-                //}
-                //communities[i] = tmp_community;
-
-            }
-            if (best_community != communities[i]) {
-                if (degrees[communities[i]] >= g->nodes[i]->ne) {  
-                    degrees[communities[i]] -= g->nodes[i]->ne;
-                }
-            
-                communities[i] = best_community;
-            
-                degrees[best_community] += g->nodes[i]->ne;
-            }
-            //communities[i] = best_community;
+        if(is_unique){
+            partitioned_communities[c++] = communities[i];
         }
     }
 
-    int communities_count = count_communities(communities, n);
-
-    for(int i = 0; i<communities_count; i++){
-
-        printf("Graph has been partitioned to %d communities:\n", communities_count);
-        printf("Community %d:\n");
-        for(int j = 0; j<n; j++){
-            if(communities[j] == i){
-                int c = 0;
-                if(c==10){
-                    printf("\n");
-                }
-                printf("%d ", j);
-                c++;
-            }
-        }
-
-    }
-
-
+    return partitioned_communities;
 }
 

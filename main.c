@@ -13,6 +13,8 @@ int main(int argc, char **argv){
     //     printf("Node: %d, number of nieghbours: %d\n", i, g->nodes[i]->ne);
     // }
     louvian_clustering(g);
+    sort_graph(g);
+    print_list_repr(g);
     printf("test\n");
 
 }
