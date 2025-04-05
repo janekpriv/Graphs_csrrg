@@ -72,6 +72,7 @@ void print_list_repr(Graph *g){
 
 void print_adj_matrix_repr(Graph *g){
     FILE *out = fopen("output/adjm.txt", "w");
+    FILE *bout = fopen("output/adjm.bin","wb");
     if(out == NULL){
         fprintf(stderr, "unable to open the output file, terminating");
     }
@@ -84,19 +85,32 @@ void print_adj_matrix_repr(Graph *g){
     // nodes and links MUST be sorted for it to work (sort_graph handles that)
     for (int i = 0; i < g->n; i++){
         int k = 0;
-        fprintf(out, "[");
+        //fprintf(out, "[");
         int ne = g->nodes[i]->ne;
         for (int j = 0; j < g->n; j++){
             if (k < ne && j == g->nodes[i]->links[k]->id){
-                fprintf(out, "1. ");
+                fprintf(out, "1 ");
+
+                // Writing to the binary file (1 byte for 1)
+                char value = 1;
+                fwrite(&value, sizeof(char), 1, bout);
+
                 k++;
+                
             }
             else {
-                fprintf(out, "0. ");
+                fprintf(out, "0 ");
+
+                 // Writing to the binary file (1 byte for 0)
+                 char value = 0;
+                 fwrite(&value, sizeof(char), 1, bout);
             }
         }
-        fprintf(out, "]\n");
-    }   
+        fprintf(out, "\n");
+        //fprintf(out, "]\n");
+    }
+    fclose(out); 
+    fclose(bout);  
 }
 
 
