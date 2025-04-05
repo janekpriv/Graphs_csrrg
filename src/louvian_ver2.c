@@ -1,4 +1,3 @@
-// Naprawiony kod Louvain z poprawną funkcją modularności i delta modularności
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
