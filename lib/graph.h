@@ -9,6 +9,7 @@ typedef enum {
 typedef struct Node {
     int id;
     int ne;
+    int comm;
     struct Node **links;
 } *Node;
 

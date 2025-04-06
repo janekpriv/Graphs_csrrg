@@ -10,4 +10,5 @@ int *tokenize(char *edges_offset, int len);
 void convert(int *e_id, int *edges, int e_count, Graph *g);
 void matrix_visualisation(int cols, int in_row_count, int *positions, int *in_row);
 
+Graph *generate_graph_csrrg(int argc, char **argv);
 #endif

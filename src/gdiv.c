@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "../lib/graph.h"
 
-int count_numbers(char *l){
+int count_Numbers(char *l){
     char tmp[strlen(l)+1];
     strcpy(tmp, l);
     int counter = 0;
@@ -47,7 +47,7 @@ void print_arr(int *arr, int arr_size){
 
 
 
-int main (int argc, char **argv) {
+Graph *generate_graph_csrrg (int argc, char **argv) {
     FILE *in = argc == 2 ? fopen(argv[1], "r") : NULL;
     if(in == NULL){
         fprintf(stderr, "[!] there was a problem with loading a file %s\n", argv[1]);
@@ -81,26 +81,26 @@ int main (int argc, char **argv) {
     printf("cols = %d\n", cols);
     
 
-    int nodes = count_numbers(l2);
+    int nodes = count_Numbers(l2);
     assert(nodes > 0);
     fprintf(gr_info, "nodes = %d\n", nodes);
     printf("nodes = %d\n", nodes);
     Graph *g = graph_init(nodes, UNDIRECTED);
 
 
-    int rows = count_numbers(l3);
+    int rows = count_Numbers(l3);
     assert(rows > 0);
     fprintf(gr_info, "rows = %d\n", rows);
     printf("rows = %d\n", rows);
     
 
-    int edg_size = count_numbers(l4); 
+    int edg_size = count_Numbers(l4); 
     // edges array
     int * edges = convert_to_arr(l4, edg_size);
     assert(edges != NULL);
     //print_arr(edges, edg_size);
 
-    int  ind_size = count_numbers(l5);
+    int  ind_size = count_Numbers(l5);
     // main nodes indices array
     int * indices = convert_to_arr(l5, ind_size);
     assert(indices != NULL);
@@ -136,14 +136,13 @@ int main (int argc, char **argv) {
     fprintf(gr_info, "edges: %d\n", n_edg);
     printf("edges: %d\n", n_edg);
     fclose(gr_info);
-    sort_graph(g);
-    print_adj_matrix_repr(g);
-    print_list_repr(g);
 
     free(l1);
     free(l2);
     free(l3);
     free(l4);
     free(l5);
+
+    return g;
     
 }

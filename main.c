@@ -12,7 +12,10 @@ int main(int argc, char **argv){
     // for(int i = 0; i<g->n; i++){
     //     printf("Node: %d, number of nieghbours: %d\n", i, g->nodes[i]->ne);
     // }
-    louvian_clustering(g);
-    printf("test\n");
-
+    //Graph *g = generate_graph_csrrg(argc, argv);
+    puts("finished generation of initial graph");
+    sort_graph(g);
+    louvain(g, 3);
+    
+    free_graph(g);
 }

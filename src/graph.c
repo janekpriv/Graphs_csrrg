@@ -16,6 +16,7 @@ Node create_Node(int id){
     if (!v) return NULL;
     v->id = id;
     v->ne = 0;
+    v->comm = -1;
     v->links = NULL;
     return v;
 }
@@ -40,8 +41,14 @@ Graph *graph_init(int n, GraphType type) {
 
 void link_nodes(Node node1, Node node2) {
     /* node1 -> node2*/
-    node1->links[node1->ne] = node2;
-    node1->ne++;
+    for (int i = 0; i < node1->ne; i++) {
+        if (node1->links[i] == node2) {
+            //printf(" %d - %d exists\n", node1->id, node2->id);
+            return;
+        }
+        
+    }
+    node1->links[node1->ne++] = node2;
 }
 
 void print_list_repr(Graph *g){
@@ -130,7 +137,6 @@ void sort_graph(Graph *g){
     
     qsort(g->nodes, g->n, sizeof(Node), cmp);
     
-
     for (int i = 0; i < g->n; i++){
         int ne = g->nodes[i]->ne;
         if (ne > 0) {
@@ -178,10 +184,11 @@ int add_node(Graph *g, int main_node, int secondary_node, int c){
         node_2 = g->nodes[i];
     }
     if(node_1 && node_2){
-        link_nodes(node_1, node_2);
-        link_nodes(node_2, node_1);
-       // printf("adding %d - %d\n", main_node, secondary_node);
-    }   
+            link_nodes(node_1, node_2);
+            link_nodes(node_2, node_1);
+            //printf("adding %d - %d\n", main_node, secondary_node);
+    }
+   
     return added_nodes;
 
 }
@@ -210,6 +217,5 @@ int edge_exists(Graph *g, int index1, int index2) {
             return 1; 
         }
     }
-    
     return 0; 
 }
