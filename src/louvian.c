@@ -31,10 +31,46 @@ double get_modularity(int *communities, Graph *g){
 
         }
     }
-
+    printf("%lf", quality/(2.0*number_of_edges));
     return  quality/(2.0*number_of_edges);
 
 } 
+
+
+double delta_modularity(int community, Node u, Graph *g){
+
+    int n = g->n;
+    int number_of_edges  = edge_count(g);
+
+    // m: total sum of edge weights in the graph (constant during one pass)
+    int m = edge_count(g);
+
+
+    
+    // ku: weighted degree of vertex u (sum of weights of all edges incident to u)
+    int ku = u->ne;
+
+    // ku→c: sum of weights of edges between vertex u and vertices in community c
+    int ku_to_c = 0;
+    for (int i = 0; i < ku; i++){
+        if (u->links[i]->comm == community)
+        ku_to_c++;
+    }
+
+    // Σc^: sum of weighted degrees of all vertices currently in community c
+    int Sigma_c_hat = 0;
+    for (int i = 0; i < g->n; i++){
+        if (g->nodes[i]->comm == community)
+        Sigma_c_hat++;
+    }
+
+    // Calculate delta Q (proportional value, omitting 1/m factor for efficiency)
+    double delta_Q = (double)ku_to_c - (double)(Sigma_c_hat * ku) / (double)(2.0 * m);
+    
+    return delta_Q;
+}
+
+
 
 int count_communities(Graph* g){
     int * unique_c = malloc(sizeof(int)* g->n);
@@ -85,10 +121,12 @@ void louvain(Graph *g, int desired_k){
     bool changes = true;
     Graph *current_g = g;
     int min_communities = 2; 
+    double modularity = 0.0;
     while (changes) {
         changes = false;
         printf("Starting phase1\n");
-        phase1(current_g, g); // pass original graph for updates
+        
+        modularity = phase1(current_g, g, modularity); // pass original graph for updates
         int current_count = count_communities(current_g);
         print_communities(g);
         fflush(stdout);
@@ -123,46 +161,55 @@ void change_communities(Graph *g, int old_comm, int new_comm) {
 
 // phase 1 of Louvain algorithm: local optimization
 
-void phase1(Graph *g, Graph *og){
+double phase1(Graph *g, Graph *og, double global_Q){
     int n = g->n;
     int *communities = malloc( sizeof(int) * n);
-    int tmp_community;
+    int curr_community;
 
     time1 = (double) clock(); 
     for(int i = 0; i<g->n; i++) g->nodes[i]->comm = i;
     time1 = time1 / CLOCKS_PER_SEC;
     int iteration = 0;
     
+    printf("GLOBAL MODULARITY = %lf\n", global_Q);
     bool improvement = true;
-    double best_modularity = -1;
+    //double best_modularity = -1;
     while(improvement){
         improvement = false;
         iteration++;
         printf("Phase1 iteration %d\n", iteration);
         for(int i = 0; i<n; i++){
+            double best_delta_Q = 0.0;
             int best_community = g->nodes[i]->comm;
             for(int j = 0; j<g->nodes[i]->ne; j++){
-                    tmp_community = g->nodes[i]->comm;
+                    curr_community = g->nodes[i]->comm;
                     int neighbor_comm = g->nodes[i]->links[j]->comm;
-                    if (neighbor_comm == tmp_community)
+                    if (neighbor_comm == curr_community)
                         continue; // no point in trying same community
-                    g->nodes[i]->comm = neighbor_comm ;
-                    double modularity = get_modularity(communities, g);
+                    //double modularity = get_modularity(communities, g);
+                    double delta_Q = delta_modularity(neighbor_comm, g->nodes[i], g);
                     //printf("modularity: %lf  best modularity %lf\n", modularity, best_modularity);
-                    if(modularity>best_modularity){
-                        printf("modularity has improved: %lf\n", best_modularity);
-                        best_modularity = modularity;
-                        improvement = true;
+                    if(delta_Q>best_delta_Q){
+                        //printf("delta_Q has improved: %lf->%lf\n", best_delta_Q, delta_Q);
+                        best_delta_Q = delta_Q;
                         best_community = neighbor_comm;
+                        
                     }
-                g->nodes[i]->comm = tmp_community;   
             }
-            g->nodes[i]->comm = best_community;
+            if (best_delta_Q > 0){
+                g->nodes[i]->comm = best_community;
+                bool improvement = true;
+            }
+            
             
         }
+        printf("Finished Phase1 iteration %d\n", iteration);
+        
     }
-    printf("quality: %lf\n", best_modularity);
+    printf("Finished optimization loop\n");
+    //printf("quality: %lf\n", best_modularity);
     int communities_count = count_communities(g);
+    
 
     
     int *new_communities = malloc(sizeof(int)*communities_count);
@@ -181,22 +228,27 @@ void phase1(Graph *g, Graph *og){
         new_communities[k++] = g->nodes[i]->comm;
     }
 
-    
+    printf("Counted communities\n");
     for(int i = 0; i < og->n ; i++){
         bool changed = false;
+        //printf("node %d community %d becomes\n", i, og->nodes[i]->comm);
         for (int j = 0; j <communities_count; j++){
             if (new_communities[j] == og->nodes[i]->comm){
+                
                 og->nodes[i]->comm = j;
                 changed = true;
+                //printf(" part of community %d\n", j);
                 break;
             }
         }
         if (!changed){
-            og->nodes[i]->comm = g->nodes[og->nodes[i]->comm+1]->comm;
+            og->nodes[i]->comm = g->nodes[og->nodes[i]->comm]->comm;
+            //printf("changed the community to %d\n", g->nodes[og->nodes[i]->comm]->comm);
             i--;
         }
         
     }
+    printf("Changed og values to new communities\n");
 
     if (og != g){
         for(int i = 0; i < g->n ; i++){
@@ -211,6 +263,13 @@ void phase1(Graph *g, Graph *og){
 
     timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
     printf("The elapsed time is %f seconds\n", timedif);
+
+    double new_Q = get_modularity(communities, og);
+        printf("NEW MODULARITY = %lf\n", new_Q);
+        if (new_Q > global_Q){
+            global_Q = new_Q;
+        }
+    return global_Q;
 
 }
 
