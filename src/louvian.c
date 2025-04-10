@@ -255,7 +255,7 @@ void split_community(Graph *g, int comm_to_split, int curr_comm_count, int desir
     //sort_graph(subgraph);
     int target_splits = desired_k - curr_comm_count + 1;
     // Run Phase 1 on subgraph to split into 2+ communities
-    phase1(subgraph, subgraph, 0.0, target_splits);
+    phase1(subgraph, subgraph, target_splits);
     printf("phase 1 finished for the subgraph\n");
     // Map back to original graph with new community IDs
     int new_comm_id = curr_comm_count; // Start with next available ID
@@ -311,7 +311,7 @@ void louvain(Graph *g, int desired_k){
     bool improvement = true;
     Graph *current_g = g;
     double modularity = 0.0;
-    int comm_count;
+    int comm_count, new_comm_count;
 
     while (improvement) {
         improvement = false;
@@ -319,22 +319,29 @@ void louvain(Graph *g, int desired_k){
     #ifdef DEBUG
         puts("Starting phase 1");
     #endif
-
-        modularity = phase1(current_g, g, modularity, desired_k); // pass original graph (g) to update comm
-        comm_count = count_communities(current_g);
-        print_communities(g);
-   
-        print_list_repr(g);
-        if (comm_count <= desired_k) break;
-
-        Graph *cg = phase2(current_g); // communities graph
-        if (!cg) break;
+        comm_count = current_g->n;
+        phase1(current_g, g, desired_k); // pass original graph (g) to update comm
+        //comm_count = count_communities(current_g);
         
-        if (count_communities(cg) < comm_count) { // check if aggregation reduced communities
+        //if (comm_count <= desired_k) break;
+
+    #ifdef DEBUG
+        puts("Starting phase 2");
+    #endif
+        Graph *cg = phase2(current_g); // communities graph
+        //if (!cg) break;
+    
+        if ((new_comm_count = (count_communities(g))) < comm_count && new_comm_count > desired_k) { 
+    #ifdef DEBUG
+        printf("Community count decreased: %d -> %d\n", comm_count, new_comm_count);
+    #endif
             improvement = true;
             if (current_g != g) free_graph(current_g); // free intermediate graph
             current_g = cg;
         } else {
+    #ifdef DEBUG
+            printf("Community count %d -> %d\n", comm_count, new_comm_count);
+    #endif
             free_graph(cg); // no change, discard cg
             break;
         }
@@ -379,7 +386,8 @@ void change_communities(Graph *g, int old_comm, int new_comm) {
 
 // phase 1 of Louvain algorithm: local optimization
 #include <math.h>
-double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
+
+void phase1(Graph *g, Graph *og, int target_comm_count){
     int n = g->n;
     int *communities = malloc( sizeof(int) * n);
     int curr_community;
@@ -389,7 +397,6 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
     time1 = time1 / CLOCKS_PER_SEC;
     int iteration = 0;
     
-    printf("GLOBAL MODULARITY = %lf\n", global_Q);
     bool improvement = true;
     int max_iterations = 4;
     double threshold = 1e-4; 
@@ -433,6 +440,7 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
         
     }
     printf("Finished optimization loop\n");
+
     int communities_count = count_communities(g);
     
 
@@ -489,13 +497,6 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
     timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
     printf("The elapsed time is %f seconds\n", timedif);
 
-    double new_Q = get_modularity(communities, og);
-    printf("NEW MODULARITY = %lf\n", new_Q);
-    int prev_Q;
-    if (new_Q > global_Q){
-        prev_Q = global_Q;
-        global_Q = new_Q;
-    }
     /*
     double delta_mod = fabs(new_Q - prev_Q);
 
@@ -508,8 +509,6 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
     */
     free(new_communities);
     free(communities);
-    return global_Q;
-
 }
 
 

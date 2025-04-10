@@ -21,6 +21,8 @@ int main(int argc, char **argv){
     sort_graph(g); 
 
     louvain(g, parts);
+    print_communities(g);
     
+    print_list_repr(g);
     free_graph(g);
 }

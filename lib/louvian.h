@@ -12,7 +12,7 @@ typedef struct List{
 double get_modularity(int *communities, Graph *g);
 
 void louvain(Graph *g, int desired_k);
-double phase1(Graph *temporary_graph, Graph *original_graph, double modularity, int target_comm_count);
+void phase1(Graph *temporary_graph, Graph *original_graph, int target_comm_count);
 Graph* phase2(Graph *g);
 double delta_modularity(int community, Node u, Graph *g);
 #endif
