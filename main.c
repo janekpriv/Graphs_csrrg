@@ -7,15 +7,20 @@
 #include "./lib/louvian.h"
 
 int main(int argc, char **argv){
-
     Graph *g = generate_graph_from_csrrg(argv[1]);
-    // for(int i = 0; i<g->n; i++){
-    //     printf("Node: %d, number of nieghbours: %d\n", i, g->nodes[i]->ne);
-    // }
-    //Graph *g = generate_graph_csrrg(argc, argv);
-    puts("finished generation of initial graph");
-    sort_graph(g);
-    louvain(g, 3);
+    if (!g){
+        perror("Error generating initial graph");
+        return -1;
+    }
+    puts("Finished generation of initial graph");
+    
+    // Convert the number of partitions if it's correct, otherwise set it to 2.
+    long int p; char *end_ptr;
+    int parts = argc > 2 ? (p = (strtol(argv[2], &end_ptr, 10))) != 0L && p < (g->n)/4 ? (int)p : 2  : 2;
+    
+    sort_graph(g); 
+
+    louvain(g, parts);
     
     free_graph(g);
 }

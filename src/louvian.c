@@ -5,6 +5,8 @@
 #include "../lib/louvian.h"
 #include "../lib/graph.h"
 
+#define DEBUG 
+
 double get_modularity(int *communities, Graph *g){
 
     int n = g->n;
@@ -306,18 +308,22 @@ printf("start remapping\n");
 
 
 void louvain(Graph *g, int desired_k){
-    bool changes = true;
+    bool improvement = true;
     Graph *current_g = g;
     double modularity = 0.0;
     int comm_count;
-    while (changes) {
-        changes = false;
-        printf("Starting phase1\n");
-        
-        modularity = phase1(current_g, g, modularity, desired_k); // pass original graph for updates
+
+    while (improvement) {
+        improvement = false;
+
+    #ifdef DEBUG
+        puts("Starting phase 1");
+    #endif
+
+        modularity = phase1(current_g, g, modularity, desired_k); // pass original graph (g) to update comm
         comm_count = count_communities(current_g);
         print_communities(g);
-        fflush(stdout);
+   
         print_list_repr(g);
         if (comm_count <= desired_k) break;
 
@@ -325,7 +331,7 @@ void louvain(Graph *g, int desired_k){
         if (!cg) break;
         
         if (count_communities(cg) < comm_count) { // check if aggregation reduced communities
-            changes = true;
+            improvement = true;
             if (current_g != g) free_graph(current_g); // free intermediate graph
             current_g = cg;
         } else {
