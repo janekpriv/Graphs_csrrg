@@ -77,6 +77,41 @@ void print_list_repr(Graph *g){
     fclose(out);
 }
 
+save_list_repr(Graph *g, int parts){
+
+    if (g == NULL) {
+        printf("Graph is NULL\n");
+        return;
+    }
+
+    for (int k = 0; k < parts; k++){
+        char filename[64];
+        sprintf(filename, "output/graph%d.txt", k );
+        FILE *out = fopen(filename, "w");
+        if(out == NULL){
+            fprintf(stderr, "unable to open the output file, terminating");
+        }
+
+        for (int i = 0; i < g->n; i++) {
+            if (g->nodes[i]->comm == k){
+                fprintf(out,"%d: ", g->nodes[i]->id);
+            for (int j = 0; j < g->nodes[i]->ne; j++) {
+                Node neighbor = g->nodes[i]->links[j];
+                if (neighbor->comm == k)
+                    fprintf(out, "%d ", g->nodes[i]->links[j]->id);
+        
+            }
+            fprintf(out,"\n");
+                
+            }
+            
+        }
+        fclose(out);
+    }
+    
+}
+
+
 void print_adj_matrix_repr(Graph *g){
     FILE *out = fopen("output/adjm.txt", "w");
     FILE *bout = fopen("output/adjm.bin","wb");
