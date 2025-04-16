@@ -10,12 +10,13 @@
 double get_modularity(int *communities, Graph *g){
 
     int n = g->n;
-    int number_of_edges  = edge_count(g);
+    int m  = edge_count(g); 
+    int denom = 2*m - 1;
 
     double quality = 0;
     int k1, k2, A;
     for(int i = 0; i<n; i++){
-        for(int j = 0; j<n; j++){
+        for(int j = i+1; j<n; j++){
             // check if node is in the same community 
             if(g->nodes[i]->comm == g->nodes[j]->comm){
 
@@ -24,17 +25,13 @@ double get_modularity(int *communities, Graph *g){
 
                 A = edge_exists(g, i, j);
 
-                quality += (double)A - (double)(k1*k2)/(double)(2.0* number_of_edges);
-                
-                //printf("quality: %g, k1: %d, k2, %d\n", quality, k1, k2);
-
+                quality += (double)A - (double)(k1*k2)/(double)(denom);
             }
 
 
         }
     }
-    //printf("%lf", quality/(2.0*number_of_edges));
-    return  quality/(2.0*number_of_edges);
+    return  quality/((double)m); // don't divide by 2 because we didn't compute duplicates
 
 } 
 
@@ -47,8 +44,6 @@ double delta_modularity(int community, Node u, Graph *g){
     // m: total sum of edge weights in the graph (constant during one pass)
     int m = edge_count(g);
 
-
-    
     // ku: weighted degree of vertex u (sum of weights of all edges incident to u)
     int ku = u->ne;
 
@@ -384,6 +379,12 @@ void change_communities(Graph *g, int old_comm, int new_comm) {
     }
 }
 
+void seed_communities(Graph *g) {
+    for (int i = 0; i < g->n; i++)
+        g->nodes[i]->comm = i;
+}
+
+
 // phase 1 of Louvain algorithm: local optimization
 #include <math.h>
 
@@ -393,7 +394,7 @@ void phase1(Graph *g, Graph *og, int target_comm_count){
     int curr_community;
 
     time1 = (double) clock(); 
-    for(int i = 0; i<g->n; i++) g->nodes[i]->comm = i;
+    seed_communities(g);
     time1 = time1 / CLOCKS_PER_SEC;
     int iteration = 0;
     
