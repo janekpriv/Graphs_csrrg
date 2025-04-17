@@ -41,11 +41,11 @@ Graph *graph_init(int n, GraphType type) {
     return g;
 }
 
-void link_nodes(Node node1, Node node2) {
+void link_nodes(Node node1, Node node2, int weight) {
     /* node1 -> node2*/
     for (int i = 0; i < node1->ne; i++) {
         if (node1->links[i] == node2) {
-            node1->edges[i]->weight++;
+            node1->edges[i]->weight += weight;
             //printf(" %d - %d exists\n", node1->id, node2->id);
             return;
         }
@@ -55,7 +55,7 @@ void link_nodes(Node node1, Node node2) {
     
     Edge *edg = malloc(sizeof(struct Edge));
     edg->to = node1->links[node1->ne]->id;
-    edg->weight = 1;
+    edg->weight = weight;
     node1->edges[node1->ne] = edg;
     node1->ne++;
 }
@@ -169,6 +169,11 @@ void free_graph(Graph *g) {
             if (g->nodes[i]->links != NULL) {
                 free(g->nodes[i]->links);
             }
+            if (g->nodes[i]->edges != NULL) {
+                for (int j = 0; j < g->nodes[i]->ne; j++)
+                    free(g->nodes[i]->edges[j]);
+                free(g->nodes[i]->edges);
+            }
             free(g->nodes[i]);
         }
     }
@@ -178,7 +183,7 @@ void free_graph(Graph *g) {
     free(g);
 }
 
-int add_node(Graph *g, int main_node, int secondary_node, int c){
+int add_node(Graph *g, int main_node, int secondary_node, int c, int weight){
     
     int i;
     int added_nodes = 0;
@@ -204,9 +209,9 @@ int add_node(Graph *g, int main_node, int secondary_node, int c){
         node_2 = g->nodes[i];
     }
 
-    link_nodes(node_1, node_2);
+    link_nodes(node_1, node_2, weight);
     if(node_1 && node_2)
-        link_nodes(node_2, node_1);
+        link_nodes(node_2, node_1, weight);
     //printf("adding %d - %d\n", main_node, secondary_node);
    
     return added_nodes;

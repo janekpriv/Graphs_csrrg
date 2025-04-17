@@ -98,7 +98,7 @@ void convert(int *e_id, int *edges, int e_count, Graph *g){
             c++;
         }else{
             secondary = edges[i];
-            size += add_node(g, main_node, secondary, size);
+            size += add_node(g, main_node, secondary, size, 1);
         }
         
     }
