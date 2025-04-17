@@ -39,32 +39,62 @@ double get_modularity(int *communities, Graph *g){
 double delta_modularity(int community, Node u, Graph *g){
 
     int n = g->n;
-    int number_of_edges  = edge_count(g);
 
     // m: total sum of edge weights in the graph (constant during one pass)
-    int m = edge_count(g);
+    int m = 0;
+    if (u->edges == NULL)
+         m = edge_count(g);
+    else {
+        for (int i = 0; i < n; i++){
+            for(int j = 0; j < g->nodes[i]->ne; j++)
+            m +=  g->nodes[i]->edges[j]->weight;
+        }
+        m = m/2;
+    }
 
     // ku: weighted degree of vertex u (sum of weights of all edges incident to u)
-    int ku = u->ne;
+    int ku = 0;
+    if (u->edges == NULL)
+        ku = u->ne;
+    else {
+        for (int i = 0; i < u->ne; i++)
+            ku += u->edges[i]->weight;
+    }
+    
 
     // ku→c: sum of weights of edges between vertex u and vertices in community c
     int ku_to_c = 0;
-    for (int i = 0; i < ku; i++){
-        if (u->links[i]->comm == community)
-        ku_to_c++;
+    for (int i = 0; i < u->ne; i++){
+        if (u->links[i]->comm == community){
+            if (u->edges == NULL){
+                ku_to_c++;
+            }else{
+                ku_to_c += u->edges[i]->weight;
+            }
+        }
+        
     }
 
     // Σc^: sum of weighted degrees of all vertices currently in community c
     int Sigma_c_hat = 0;
     for (int i = 0; i < g->n; i++){
-        if (g->nodes[i]->comm == community)
-        Sigma_c_hat++;
+        if (g->nodes[i]->comm == community){
+            if (u->edges == NULL){
+                Sigma_c_hat += g->nodes[i]->ne;;
+            }
+            else{
+                Node node = g->nodes[i];
+                for (int j = 0; j < node->ne; j++)
+                    Sigma_c_hat += node->edges[j]->weight;
+            }
+        }
+        
     }
 
     // Calculate delta Q (proportional value, omitting 1/m factor for efficiency)
     double delta_Q = (double)ku_to_c - (double)(Sigma_c_hat * ku) / (double)(2.0 * m);
     
-    return delta_Q;
+    return delta_Q / (2.0 * m);
 }
 
 
@@ -390,35 +420,34 @@ void seed_communities(Graph *g) {
 
 void phase1(Graph *g, Graph *og, int target_comm_count){
     int n = g->n;
-    int *communities = malloc( sizeof(int) * n);
     int curr_community;
 
     time1 = (double) clock(); 
-    seed_communities(g);
+    
     time1 = time1 / CLOCKS_PER_SEC;
     int iteration = 0;
     
     bool improvement = true;
-    int max_iterations = 4;
+    int max_iterations = 100;
     double threshold = 1e-4; 
-    
-    //double best_modularity = -1;
+    seed_communities(g);
+    double mod1 = get_modularity(NULL, g);
+
     while(improvement && iteration < max_iterations){
         improvement = false;
         iteration++;
-        if (iteration%100 == 0)
-            printf("Phase1 iteration %d\n", iteration);
+
         for(int i = 0; i<n; i++){
-            double best_delta_Q = 0.0;
+            double best_delta_Q = g->nodes[i]->dmod;
             int best_community = g->nodes[i]->comm;
+            curr_community = g->nodes[i]->comm;
             for(int j = 0; j<g->nodes[i]->ne; j++){
-                    curr_community = g->nodes[i]->comm;
                     int neighbor_comm = g->nodes[i]->links[j]->comm;
                     if (neighbor_comm == curr_community)
                         continue; // no point in trying same community
-                    //double modularity = get_modularity(communities, g);
+
                     double delta_Q = delta_modularity(neighbor_comm, g->nodes[i], g);
-                    //printf("modularity: %lf  best modularity %lf\n", modularity, best_modularity);
+
                     if(delta_Q>best_delta_Q){
                         
                         best_delta_Q = delta_Q;
@@ -427,15 +456,20 @@ void phase1(Graph *g, Graph *og, int target_comm_count){
                     }
                     
             }
-            if (best_delta_Q > 0.0){
+            if (best_delta_Q > g->nodes[i]->dmod){
                 //printf("delta_Q  %lf- \n", best_delta_Q);
                 g->nodes[i]->comm = best_community;
-                improvement = true;
+                g->nodes[i]->dmod = best_delta_Q;
             }
             
             
-            
         }
+        double mod2 = get_modularity(NULL, g);
+            if (mod2>mod1){
+                improvement = true;
+                mod1 = mod2;
+            }
+        
         //if (count_communities(g) <= target_comm_count) break; // Stop at target
         //printf("Finished Phase1 iteration %d\n", iteration);
         
@@ -509,7 +543,6 @@ void phase1(Graph *g, Graph *og, int target_comm_count){
     prev_Q = new_Q;
     */
     free(new_communities);
-    free(communities);
 }
 
 
@@ -526,11 +559,8 @@ Graph *phase2(Graph *g){
         int comm1 = g->nodes[i]->comm;
         for (int j = 0; j< g->nodes[i]->ne; j++){
             int comm2 = g->nodes[i]->links[j]->comm;
-            if (comm1 != comm2 ){
-                    c += add_node(cg,comm1, comm2, c);
-                    //printf("adding %d - %d\n", comm1, comm2);
-                
-            }
+            c += add_node(cg,comm1, comm2, c);
+            //printf("adding %d - %d\n", comm1, comm2);
 
         }
         

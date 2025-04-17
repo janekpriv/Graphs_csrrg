@@ -16,4 +16,5 @@ void phase1(Graph *temporary_graph, Graph *original_graph, int target_comm_count
 Graph* phase2(Graph *g);
 double delta_modularity(int community, Node u, Graph *g);
 void seed_communities(Graph *g);
+void print_communities(Graph * g);
 #endif

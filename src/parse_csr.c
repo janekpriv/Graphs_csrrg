@@ -60,7 +60,7 @@ Graph *generate_graph_from_csrrg(char* filename){
     Graph *g = graph_init(nodes_count, UNDIRECTED);
 
     convert(e_id, edges, e_count, g);
-    matrix_visualisation(cols, in_row_count, positions_l, in_row);
+    //matrix_visualisation(cols, in_row_count, positions_l, in_row);
 
     return g;
 }
