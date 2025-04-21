@@ -87,16 +87,22 @@ void print_list_repr(Graph *g){
     fclose(out);
 }
 
-save_list_repr(Graph *g, int parts){
+save_list_repr(Graph *g){
+    int PARTS = 3;
+    char folder[30];
+    sprintf(folder, "pg%dx%d", g->n, g->e);
+    char save_output_command[100];
+    sprintf(save_output_command, "mkdir -p ./output/%s", folder);
+    system(save_output_command);
 
     if (g == NULL) {
         printf("Graph is NULL\n");
         return;
     }
 
-    for (int k = 0; k < parts; k++){
+    for (int k = 0; k < PARTS; k++){
         char filename[64];
-        sprintf(filename, "output/graph%d.txt", k );
+        sprintf(filename, "./output/%s/graph%d", folder, k );
         FILE *out = fopen(filename, "w");
         if(out == NULL){
             fprintf(stderr, "unable to open the output file, terminating");

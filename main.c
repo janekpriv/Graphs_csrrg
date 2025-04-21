@@ -13,14 +13,7 @@ int main(int argc, char **argv){
         return -1;
     }
     sort_graph(g); 
-<<<<<<< HEAD
-
-    louvain(g, parts);
-
-    save_list_repr(g, parts);
-=======
     //puts("Finished generation of initial graph");
->>>>>>> debugging
     
 
     int ncomm = 0;
@@ -29,9 +22,6 @@ int main(int argc, char **argv){
      merge_to_three_communities(g, ncomm);
     printf("Final modularity: %lf\n", get_modularity(g));
     
-    char save_output_command[100];
-    sprintf(save_output_command, "mkdir ./output/pg%dx%d", g->n, g->e);
-    system(save_output_command);
-    print_list_repr(g);
+    save_list_repr(g);
     free_graph(g);
 }

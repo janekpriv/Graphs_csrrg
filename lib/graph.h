@@ -43,5 +43,5 @@ int cmp_nod(const void *a, const void *b);
 void sort_graph(Graph *g);
 int edge_count(Graph*);
 int edge_exists(Graph*, int, int);
-save_list_repr(Graph *g, int parts);
+save_list_repr(Graph *g);
 #endif
