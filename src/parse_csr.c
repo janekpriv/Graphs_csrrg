@@ -32,7 +32,7 @@ Graph *generate_graph_from_csrrg(char* filename){
 
     FILE *in = fopen(filename, "r");
     if(in == NULL){
-        fprintf(stderr, "[!] there was a problem with loding a file%s", filename);
+        fprintf(stderr, "[!] there was a problem with loading a file %s\n", filename);
         return NULL;
     }
 

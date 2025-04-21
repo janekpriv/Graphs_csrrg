@@ -31,7 +31,8 @@ Graph *graph_init(int n, GraphType type) {
 
     g->type = type;
     g->n = n;
-
+    g->e = 0;
+    g->ncomm = 0;
     g->nodes = malloc(n * sizeof(Node*));
     if (g->nodes == NULL) {
         free(g);
@@ -209,9 +210,13 @@ int add_node(Graph *g, int main_node, int secondary_node, int c, int weight){
         node_2 = g->nodes[i];
     }
 
+    
     link_nodes(node_1, node_2, weight);
-    if(node_1 && node_2)
+    g->e++; // increment total number of edges in a graph
+    if(node_1 && node_2){
         link_nodes(node_2, node_1, weight);
+        
+    }
     //printf("adding %d - %d\n", main_node, secondary_node);
    
     return added_nodes;

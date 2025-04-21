@@ -24,8 +24,10 @@ typedef struct Node {
 
 typedef struct Graph {
     GraphType type;
-    int n;  
+    int n; // number of nodes
+    int e; // number of edges
     Node *nodes;
+    int ncomm;
 } Graph;
 
 
