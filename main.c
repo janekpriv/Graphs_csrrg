@@ -9,20 +9,29 @@
 int main(int argc, char **argv){
     Graph *g = generate_graph_from_csrrg(argv[1]);
     if (!g){
-        perror("Error generating initial graph");
+        perror("Error generating initial graph ");
         return -1;
     }
-    puts("Finished generation of initial graph");
-    
-    // Convert the number of partitions if it's correct, otherwise set it to 2.
-    long int p; char *end_ptr;
-    int parts = argc > 2 ? (p = (strtol(argv[2], &end_ptr, 10))) != 0L && p < (g->n)/4 ? (int)p : 2  : 2;
-    
     sort_graph(g); 
+<<<<<<< HEAD
 
     louvain(g, parts);
 
     save_list_repr(g, parts);
+=======
+    //puts("Finished generation of initial graph");
+>>>>>>> debugging
     
+
+    int ncomm = 0;
+    ncomm = louvain(g);
+    if (ncomm != 3)
+     merge_to_three_communities(g, ncomm);
+    printf("Final modularity: %lf\n", get_modularity(g));
+    
+    char save_output_command[100];
+    sprintf(save_output_command, "mkdir ./output/pg%dx%d", g->n, g->e);
+    system(save_output_command);
+    print_list_repr(g);
     free_graph(g);
 }

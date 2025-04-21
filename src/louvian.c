@@ -4,18 +4,19 @@
 
 #include "../lib/louvian.h"
 #include "../lib/graph.h"
+#include <math.h>
+#undef DEBUG
 
-#define DEBUG 
-
-double get_modularity(int *communities, Graph *g){
+double get_modularity(Graph *g){
 
     int n = g->n;
-    int number_of_edges  = edge_count(g);
+    int m  = g->e; 
+    int denom = 2*m - 1;
 
     double quality = 0;
-    int k1, k2, A;
+    int k1, k2, A = 0;
     for(int i = 0; i<n; i++){
-        for(int j = 0; j<n; j++){
+        for(int j = i+1; j<n; j++){
             // check if node is in the same community 
             if(g->nodes[i]->comm == g->nodes[j]->comm){
 
@@ -24,17 +25,13 @@ double get_modularity(int *communities, Graph *g){
 
                 A = edge_exists(g, i, j);
 
-                quality += (double)A - (double)(k1*k2)/(double)(2.0* number_of_edges);
-                
-                //printf("quality: %g, k1: %d, k2, %d\n", quality, k1, k2);
-
+                quality += (double)A - (double)(k1*k2)/(double)(denom);
             }
 
 
         }
     }
-    //printf("%lf", quality/(2.0*number_of_edges));
-    return  quality/(2.0*number_of_edges);
+    return  quality/((double)m); // don't divide by 2 because we didn't compute duplicates
 
 } 
 
@@ -42,34 +39,62 @@ double get_modularity(int *communities, Graph *g){
 double delta_modularity(int community, Node u, Graph *g){
 
     int n = g->n;
-    int number_of_edges  = edge_count(g);
 
     // m: total sum of edge weights in the graph (constant during one pass)
-    int m = edge_count(g);
+    int m = 0;
+    if (u->edges == NULL)
+         m = g->e;
+    else {
+        for (int i = 0; i < n; i++){
+            for(int j = 0; j < g->nodes[i]->ne; j++)
+            m +=  g->nodes[i]->edges[j]->weight;
+        }
+        m = m/2;
+    }
 
-
-    
     // ku: weighted degree of vertex u (sum of weights of all edges incident to u)
-    int ku = u->ne;
+    int ku = 0;
+    if (u->edges == NULL)
+        ku = u->ne;
+    else {
+        for (int i = 0; i < u->ne; i++)
+            ku += u->edges[i]->weight;
+    }
+    
 
     // ku→c: sum of weights of edges between vertex u and vertices in community c
     int ku_to_c = 0;
-    for (int i = 0; i < ku; i++){
-        if (u->links[i]->comm == community)
-        ku_to_c++;
+    for (int i = 0; i < u->ne; i++){
+        if (u->links[i]->comm == community){
+            if (u->edges == NULL){
+                ku_to_c++;
+            }else{
+                ku_to_c += u->edges[i]->weight;
+            }
+        }
+        
     }
 
     // Σc^: sum of weighted degrees of all vertices currently in community c
     int Sigma_c_hat = 0;
     for (int i = 0; i < g->n; i++){
-        if (g->nodes[i]->comm == community)
-        Sigma_c_hat++;
+        if (g->nodes[i]->comm == community){
+            if (u->edges == NULL){
+                Sigma_c_hat += g->nodes[i]->ne;;
+            }
+            else{
+                Node node = g->nodes[i];
+                for (int j = 0; j < node->ne; j++)
+                    Sigma_c_hat += node->edges[j]->weight;
+            }
+        }
+        
     }
 
     // Calculate delta Q (proportional value, omitting 1/m factor for efficiency)
     double delta_Q = (double)ku_to_c - (double)(Sigma_c_hat * ku) / (double)(2.0 * m);
     
-    return delta_Q;
+    return delta_Q / (2.0 * m);
 }
 
 
@@ -92,6 +117,7 @@ int count_communities(Graph* g){
         }
     }
     free(unique_c);
+    g->ncomm = c;
     return c;
 
 }
@@ -103,7 +129,7 @@ double time1, timedif;
 void print_communities(Graph * g){
     FILE *file = fopen("./output/communities", "w");
 
-    int c = count_communities(g);
+    int c = g->ncomm;
     int assigned_nodes = 0;
     printf("Total communities: %d\n", c);
     if(file)
@@ -128,44 +154,71 @@ void print_communities(Graph * g){
     fclose(file);
 }
 
+#include <limits.h>
 // Find pair of communities to merge (simplest: smallest sizes)
-void find_merge_pair(Graph *g, int *comm1, int *comm2) {
-    int *comm_sizes = calloc(count_communities(g) + 1, sizeof(int));
+void find_merge_pair(Graph *g, int *comm1, int *comm2, int desired_k) {
     int max_comm = 0;
-
-    // Count sizes and find max community ID
     for (int i = 0; i < g->n; i++) {
-        int comm = g->nodes[i]->comm;
-        comm_sizes[comm]++;
-        if (comm > max_comm) max_comm = comm;
+        if (g->nodes[i]->comm > max_comm)
+            max_comm = g->nodes[i]->comm;
     }
-    //printf("max comm = %d\n", max_comm);
 
-    // Find two smallest communities
-    int smallest1 = -1, smallest2 = -1;
-    int size1 = g->n + 1, size2 = g->n + 1;
-    for (int c = 0; c <= max_comm; c++) {
-        if (comm_sizes[c] > 0) {
-            if (comm_sizes[c] < size1) {
-                size2 = size1;
-                smallest2 = smallest1;
-                size1 = comm_sizes[c];
-                smallest1 = c;
-            } else if (comm_sizes[c] < size2) {
-                size2 = comm_sizes[c];
-                smallest2 = c;
-            }
+    // Track community membership sizes
+    int *comm_sizes = calloc(max_comm + 1, sizeof(int)); // To count the size of each community
+    for (int i = 0; i < max_comm; i++) {
+        comm_sizes[i] = 0;
+    }
+
+    for (int i = 0; i < g->n; i++) {
+        comm_sizes[g->nodes[i]->comm]++;
+    }
+
+    double delta_q_sum_best = -INFINITY;
+    *comm1 = -1;
+    *comm2 = -1;
+    
+    int min_comm_value = INT_MAX;
+    int min_comm = 0;
+    for (int i = 0; i < max_comm +1; i++){
+        if (comm_sizes[i] < min_comm_value){
+            min_comm_value = comm_sizes[i];
+            min_comm = i;
         }
     }
+
+    // Try all community pairs  
+    int c1 = min_comm;
+    for (int c2 = 0; c2 <= max_comm; c2++) {
+        // Skip merging if we have already reached the desired number of communities
+        if (c1 == c2) continue;
     
-    *comm1 = smallest1;
-    *comm2 = smallest2;
-    free(comm_sizes);
+        // Ensure both communities exist and are non-empty
+        if (comm_sizes[c1] == 0 || comm_sizes[c2] == 0) continue;
+
+        double delta_q_sum = 0;
+        for (int i = 0; i < g->n; i++){
+            if (g->nodes[i]->comm == c1)
+                delta_q_sum += delta_modularity(c2, g->nodes[i], g);
+        }
+
+        // Track the best delta Q (maximize modularity change)
+        if (delta_q_sum > delta_q_sum_best) {
+            delta_q_sum_best = delta_q_sum;
+            *comm1 = c1;
+            *comm2 = c2;
+        }
+        
+    }
+
+    free(comm_sizes); // Free memory used for community sizes
 }
+
+
+
 
 // Find largest community by node count
 int find_largest_community(Graph *g) {
-    int *comm_sizes = calloc(count_communities(g), sizeof(int));
+    int *comm_sizes = calloc(g->ncomm, sizeof(int));
     int max_comm = 0;
 
     for (int i = 0; i < g->n; i++) {
@@ -200,8 +253,13 @@ void relocate_solitary_nodes(Graph *g, int comm_num){
                         break;
                     }
                 }
-                if (!found)
+                if (!found){
+                    #ifdef DEBUG
+                    printf("changed solitary node's %d community (%d->%d)\n", node->id, node->comm, node->links[0]->comm );
+                    #endif
                     node->comm = node->links[0]->comm; 
+                    
+                }
                 else if (found)
                     break;
             }
@@ -209,7 +267,8 @@ void relocate_solitary_nodes(Graph *g, int comm_num){
     }
 }
 
-// Split a community (simple: split into two by re-running Phase 1 on subgraph)
+/*
+// Split a community (split into two by re-running Phase 1 on subgraph)
 void split_community(Graph *g, int comm_to_split, int curr_comm_count, int desired_k) {
     // Extract subgraph for the community
     int *nodes_in_comm = malloc(g->n * sizeof(int));
@@ -239,7 +298,7 @@ void split_community(Graph *g, int comm_to_split, int curr_comm_count, int desir
                 
                 if (nodes_in_comm[k] == neighbor) {
                     
-                    c += add_node(subgraph, i,k, c); // Add edge in subgraph
+                    c += add_node(subgraph, i,k, c, 1); // Add edge in subgraph
                     //printf("%d ", k);
          
                     break;
@@ -253,9 +312,9 @@ void split_community(Graph *g, int comm_to_split, int curr_comm_count, int desir
     }
     printf("subgraph filled with values: assigned %d of %d nodes\n", c, node_count);
     //sort_graph(subgraph);
-    int target_splits = desired_k - curr_comm_count + 1;
-    // Run Phase 1 on subgraph to split into 2+ communities
-    phase1(subgraph, subgraph, 0.0, target_splits);
+    
+    
+    phase1(subgraph, subgraph, mod);
     printf("phase 1 finished for the subgraph\n");
     // Map back to original graph with new community IDs
     int new_comm_id = curr_comm_count; // Start with next available ID
@@ -272,10 +331,12 @@ void split_community(Graph *g, int comm_to_split, int curr_comm_count, int desir
     free_graph(subgraph);
     free(nodes_in_comm);
 }
+*/
+
 
 void remap(Graph *g){
-printf("start remapping\n");
-    int communities_count = count_communities(g);
+//printf("start remapping\n");
+    int communities_count = g->ncomm;
     
     int *new_communities = malloc(sizeof(int)*communities_count);
     for (int i = 0; i < communities_count; i++) new_communities[i] = -1;
@@ -305,67 +366,103 @@ printf("start remapping\n");
 
 }
 
-
-
-void louvain(Graph *g, int desired_k){
-    bool improvement = true;
-    Graph *current_g = g;
-    double modularity = 0.0;
-    int comm_count;
-
-    while (improvement) {
-        improvement = false;
+// Adjusts Louvain result by merging communities to yield exactly 3,
+// optimizing for max modularity gain during each merge.
+void merge_to_three_communities(Graph *g, int comm_count){
 
     #ifdef DEBUG
-        puts("Starting phase 1");
+        puts("Begin merging graph");
     #endif
+    
+    int K = 3; // desired communities count
 
-        modularity = phase1(current_g, g, modularity, desired_k); // pass original graph (g) to update comm
-        comm_count = count_communities(current_g);
-        print_communities(g);
-   
-        print_list_repr(g);
-        if (comm_count <= desired_k) break;
+    relocate_solitary_nodes(g, comm_count); // maybe unnecessary
 
-        Graph *cg = phase2(current_g); // communities graph
-        if (!cg) break;
-        
-        if (count_communities(cg) < comm_count) { // check if aggregation reduced communities
-            improvement = true;
-            if (current_g != g) free_graph(current_g); // free intermediate graph
-            current_g = cg;
-        } else {
-            free_graph(cg); // no change, discard cg
-            break;
-        }
-    }
-    printf("COMM COUNT INITIALLY = %d", comm_count);
-    relocate_solitary_nodes(g, comm_count);
-    while (comm_count != desired_k) {
-        if (comm_count > desired_k) {
-            // Merge communities
+    while (comm_count != K) {
+        if (comm_count > K) {
+            // Find the pair to merge based on the best delta Q
             int comm1, comm2;
-            find_merge_pair(g, &comm1, &comm2); // Find pair to merge
-            change_communities(g, comm1, comm2); // Merge comm1 into comm2
-            comm_count--;
-            printf("Merged %d into %d, new count: %d\n", comm1, comm2, comm_count);
-            remap(g);
-        } else if (comm_count < desired_k) {
+            find_merge_pair(g, &comm1, &comm2, K); 
+
+            if (comm1 != -1 && comm2 != -1) {
+                // Perform the merge
+                change_communities(g, comm1, comm2);
+                remap(g);
+   
+                comm_count--; // Decrease community count after merging
+                #ifdef DEBUG
+                    printf("Merged %d into %d, new count: %d\n", comm1, comm2, comm_count);
+                #endif
+            }
+        }/* else if (comm_count < desired_k) {
             // Split a community
             int comm_to_split = find_largest_community(g);
             printf("Largest comm found: %d\n", comm_to_split);
             split_community(g, comm_to_split, comm_count, desired_k);
             comm_count = count_communities(g); // Recount after split
             printf("Split community %d, new count: %d\n", comm_to_split, comm_count);
+        }*/ 
+    }
+    #ifdef DEBUG
+        puts("Finish merging graph");
+    #endif
+}
+
+
+int louvain(Graph *g){
+    bool improvement = true;
+    Graph *current_g = g;
+    double mod = 0.0;
+    int comm_count, latest_comm_count;
+
+    while (improvement) {
+        improvement = false;
+
+        #ifdef DEBUG
+            puts("Starting phase 1");
+        #endif
+        
+        comm_count = current_g->n;
+        double new_mod = phase1(current_g, g, mod); // pass original graph (g) to update comm
+
+        #ifdef DEBUG
+            puts("Starting phase 2");
+        #endif
+
+        Graph *cg = phase2(g); // communities graph
+        //if (!cg) break;
+
+        
+
+        #ifdef DEBUG
+            printf("New modularity: %lf\n", new_mod);
+        #endif
+        
+        if ((latest_comm_count = (g->ncomm)) < comm_count && new_mod> mod /*&& latest_comm_count > desired_k*/) {  
+            #ifdef DEBUG
+                printf("Community count decreased: %d -> %d\n", comm_count, latest_comm_count);
+            #endif
+            improvement = true;
+            if (current_g != g) free_graph(current_g); // free intermediate graph
+            current_g = cg;
+        } else {
+            #ifdef DEBUG
+                    printf("Community count %d -> %d\n", comm_count, latest_comm_count);
+            #endif
+            free_graph(cg); // no change, discard cg
+            break;
         }
+        mod = new_mod;
     }
 
-    // Final output
-    print_communities(g);
-    printf("Final modularity: %lf\n", get_modularity(NULL, g)); // Pass NULL since communities array not used
+    #ifdef DEBUG
+        printf("Louvain Algorithm has terminated dividing the graph into %d communities \n", latest_comm_count);
+        
+        print_communities(g);
+    #endif
 
-    
     if (current_g != g) free_graph(current_g);
+    return latest_comm_count;
 }
 
 //change old community to new one
@@ -377,40 +474,50 @@ void change_communities(Graph *g, int old_comm, int new_comm) {
     }
 }
 
-// phase 1 of Louvain algorithm: local optimization
-#include <math.h>
-double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
-    int n = g->n;
-    int *communities = malloc( sizeof(int) * n);
-    int curr_community;
 
-    time1 = (double) clock(); 
-    for(int i = 0; i<g->n; i++) g->nodes[i]->comm = i;
-    time1 = time1 / CLOCKS_PER_SEC;
-    int iteration = 0;
-    
-    printf("GLOBAL MODULARITY = %lf\n", global_Q);
+// make every node to be in it's own community
+void seed_communities(Graph *g) {
+    for (int i = 0; i < g->n; i++)
+        g->nodes[i]->comm = i;
+    g->ncomm = g->n;
+}
+
+
+// phase 1 of Louvain algorithm: local optimization
+
+
+double phase1(Graph *g, Graph *og, double mod1){
+    #ifdef DEBUG
+        time1 = (double) clock(); 
+        time1 = time1 / CLOCKS_PER_SEC;
+    #endif
+
+    int n = g->n;
+    int curr_community;
+    int iteration = 0;  int max_iterations = 100;
     bool improvement = true;
-    int max_iterations = 4;
-    double threshold = 1e-4; 
+    //double threshold = 1e-4; 
+
+    seed_communities(g); 
     
-    //double best_modularity = -1;
+    //double mod1 = get_modularity(NULL, og);
+    double mod2;
+    
     while(improvement && iteration < max_iterations){
         improvement = false;
         iteration++;
-        if (iteration%100 == 0)
-            printf("Phase1 iteration %d\n", iteration);
+
         for(int i = 0; i<n; i++){
-            double best_delta_Q = 0.0;
+            double best_delta_Q = g->nodes[i]->dmod;
             int best_community = g->nodes[i]->comm;
+            curr_community = g->nodes[i]->comm;
             for(int j = 0; j<g->nodes[i]->ne; j++){
-                    curr_community = g->nodes[i]->comm;
                     int neighbor_comm = g->nodes[i]->links[j]->comm;
                     if (neighbor_comm == curr_community)
                         continue; // no point in trying same community
-                    //double modularity = get_modularity(communities, g);
+
                     double delta_Q = delta_modularity(neighbor_comm, g->nodes[i], g);
-                    //printf("modularity: %lf  best modularity %lf\n", modularity, best_modularity);
+
                     if(delta_Q>best_delta_Q){
                         
                         best_delta_Q = delta_Q;
@@ -419,29 +526,39 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
                     }
                     
             }
-            if (best_delta_Q > 0.0){
+            if (best_delta_Q > g->nodes[i]->dmod){
                 //printf("delta_Q  %lf- \n", best_delta_Q);
                 g->nodes[i]->comm = best_community;
-                improvement = true;
+                g->nodes[i]->dmod = best_delta_Q;
             }
             
             
             
         }
+        mod2 = get_modularity(og);
+            if (mod2>mod1){
+                improvement = true;
+                mod1 = mod2;
+            }
+        #ifdef DEBUG
+            printf("Finished iteration %d\n", iteration);
+        #endif
         //if (count_communities(g) <= target_comm_count) break; // Stop at target
         //printf("Finished Phase1 iteration %d\n", iteration);
         
     }
-    printf("Finished optimization loop\n");
-    int communities_count = count_communities(g);
+    #ifdef DEBUG
+        puts("Finished optimization loop");
+    #endif
+    //int communities_count = count_communities(g);
     
-
+    og->ncomm = count_communities(g);
     
-    int *new_communities = malloc(sizeof(int)*communities_count);
-    for (int i = 0; i < communities_count; i++) new_communities[i] = -1;
+    int *new_communities = malloc(sizeof(int)*g->ncomm);
+    for (int i = 0; i < g->ncomm; i++) new_communities[i] = -1;
     
     int k = 0;
-    for(int i = 0; i<n && k <communities_count; i++){
+    for(int i = 0; i<n && k <g->ncomm; i++){
         int found = 0;
         for (int j = 0; j <k; j++){
             if (new_communities[j] == g->nodes[i]->comm){
@@ -453,11 +570,11 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
         new_communities[k++] = g->nodes[i]->comm;
     }
 
-    printf("Counted communities\n");
+    //printf("Counted communities\n");
     for(int i = 0; i < og->n ; i++){
         bool changed = false;
         //printf("node %d community %d becomes\n", i, og->nodes[i]->comm);
-        for (int j = 0; j <communities_count; j++){
+        for (int j = 0; j <g->ncomm; j++){
             if (new_communities[j] == og->nodes[i]->comm){
                 
                 og->nodes[i]->comm = j;
@@ -473,11 +590,11 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
         }
         
     }
-    printf("Changed og values to new communities\n");
+    //printf("Changed og values to new communities\n");
 
     if (og != g){
         for(int i = 0; i < g->n ; i++){
-            for (int j = 0; j <communities_count; j++){
+            for (int j = 0; j <g->ncomm; j++){
                 if (new_communities[j] == g->nodes[i]->comm){
                     g->nodes[i]->comm = j;
                     break;
@@ -486,16 +603,10 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
         }
     }
 
-    timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
-    printf("The elapsed time is %f seconds\n", timedif);
-
-    double new_Q = get_modularity(communities, og);
-    printf("NEW MODULARITY = %lf\n", new_Q);
-    int prev_Q;
-    if (new_Q > global_Q){
-        prev_Q = global_Q;
-        global_Q = new_Q;
-    }
+    #ifdef DEBUG
+        timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
+        printf("The elapsed time for phase 1 is %f seconds\n", timedif);
+    #endif
     /*
     double delta_mod = fabs(new_Q - prev_Q);
 
@@ -507,36 +618,45 @@ double phase1(Graph *g, Graph *og, double global_Q, int target_comm_count){
     prev_Q = new_Q;
     */
     free(new_communities);
-    free(communities);
-    return global_Q;
 
+    mod2 = get_modularity(og);
+    return mod2;
 }
 
 
 // phase 2 of Louvain algorithm: aggregation
 Graph *phase2(Graph *g){
-    int n = g->n;
-    int communities_count = count_communities(g);
-    if (communities_count <= 1) return NULL;
+
+    #ifdef DEBUG
+        time1 = (double) clock(); 
+        time1 = time1 / CLOCKS_PER_SEC;
+    #endif
+
+    //if (communities_count <= 1) return NULL;
     // graph where every node is a community
-    Graph * cg = graph_init(communities_count, UNDIRECTED);
+    Graph * cg = graph_init(g->ncomm, UNDIRECTED);
 
     int c = 0; 
-    for(int i = 0; i<n ; i++){
+    for(int i = 0; i< g->n ; i++){
         int comm1 = g->nodes[i]->comm;
+       
         for (int j = 0; j< g->nodes[i]->ne; j++){
             int comm2 = g->nodes[i]->links[j]->comm;
-            if (comm1 != comm2 ){
-                    c += add_node(cg,comm1, comm2, c);
-                    //printf("adding %d - %d\n", comm1, comm2);
-                
-            }
+            int weight = g->nodes[i]->edges[j]->weight;
+    
+            c += add_node(cg,comm1, comm2, c, weight);
+            //printf("adding %d - %d\n", comm1, comm2);
 
         }
         
     }
     sort_graph(cg);
     
+    #ifdef DEBUG
+        timedif = ( ((double) clock()) / CLOCKS_PER_SEC) - time1;
+        printf("The elapsed time for phase 2 is %f seconds\n", timedif);
+    #endif
+
     return cg;
 
 }

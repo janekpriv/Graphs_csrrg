@@ -32,7 +32,7 @@ Graph *generate_graph_from_csrrg(char* filename){
 
     FILE *in = fopen(filename, "r");
     if(in == NULL){
-        fprintf(stderr, "[!] there was a problem with loding a file%s", filename);
+        fprintf(stderr, "[!] there was a problem with loading a file %s\n", filename);
         return NULL;
     }
 
@@ -60,7 +60,7 @@ Graph *generate_graph_from_csrrg(char* filename){
     Graph *g = graph_init(nodes_count, UNDIRECTED);
 
     convert(e_id, edges, e_count, g);
-    matrix_visualisation(cols, in_row_count, positions_l, in_row);
+    //matrix_visualisation(cols, in_row_count, positions_l, in_row);
 
     return g;
 }
@@ -98,7 +98,7 @@ void convert(int *e_id, int *edges, int e_count, Graph *g){
             c++;
         }else{
             secondary = edges[i];
-            size += add_node(g, main_node, secondary, size);
+            size += add_node(g, main_node, secondary, size, 1);
         }
         
     }
