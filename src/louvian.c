@@ -494,7 +494,8 @@ double phase1(Graph *g, Graph *og, double mod1){
 
     int n = g->n;
     int curr_community;
-    int iteration = 0;  int max_iterations = 100;
+    int iteration = 0;  
+    int max_iterations = n > 10000 ? 5 : 10;
     bool improvement = true;
     //double threshold = 1e-4; 
 

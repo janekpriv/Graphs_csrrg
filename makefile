@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -g -Wall -O0 -I./lib 
 TARGET = program
-OBJ = graph.o parse_csr.o main.o louvian.o 
-
+OBJDIR = build
+OBJ = $(OBJDIR)/graph.o $(OBJDIR)/parse_csr.o $(OBJDIR)/main.o $(OBJDIR)/louvian.o
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
@@ -10,7 +10,15 @@ $(TARGET): $(OBJ)
 
 %.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
-	
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+
+$(OBJDIR)/%.o: src/%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+
 test: test.o graph.o parse_csr.o louvian.o 
 	$(CC) $(CFLAGS) $^ -o test
 
@@ -27,5 +35,4 @@ graph.o: src/graph.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm *.o
-	del /Q *.o a.out program.exe 2>nul || exit 0
+	rm -rf $(OBJDIR) $(TARGET)

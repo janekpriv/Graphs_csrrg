@@ -43,6 +43,7 @@ Graph *graph_init(int n, GraphType type) {
 }
 
 void link_nodes(Node node1, Node node2, int weight) {
+    
     /* node1 -> node2*/
     for (int i = 0; i < node1->ne; i++) {
         if (node1->links[i] == node2) {
@@ -58,7 +59,12 @@ void link_nodes(Node node1, Node node2, int weight) {
     edg->to = node1->links[node1->ne]->id;
     edg->weight = weight;
     node1->edges[node1->ne] = edg;
+
     node1->ne++;
+    node1->links = realloc(node1->links, (node1->ne + 1) * sizeof(struct Node *));
+    node1->edges = realloc(node1->edges, (node1->ne + 1) * sizeof(struct Edge *));
+    
+    
 }
 
 void print_list_repr(Graph *g){
@@ -92,7 +98,7 @@ save_list_repr(Graph *g){
     char folder[30];
     sprintf(folder, "pg%dx%d", g->n, g->e);
     char save_output_command[100];
-    sprintf(save_output_command, "mkdir -p ./output/%s", folder);
+    sprintf(save_output_command,  "rm -rf ./output/%s && mkdir -p ./output/%s", folder, folder);
     system(save_output_command);
 
     if (g == NULL) {
@@ -233,8 +239,8 @@ int add_node(Graph *g, int main_node, int secondary_node, int c, int weight){
     if ((i = contains(main_node, g->nodes, c)) == -1){
         node_1 = create_Node(main_node);
         g->nodes[c] = node_1;
-        g->nodes[c]->links =malloc((g->n)* sizeof(struct Node *));
-        g->nodes[c]->edges = malloc((g->n)*sizeof(struct Edge*));
+        g->nodes[c]->links =malloc(1* sizeof(struct Node *));
+        g->nodes[c]->edges =malloc(1* sizeof(struct Edge *));
         c++;
         added_nodes++;
     }else{
@@ -243,8 +249,8 @@ int add_node(Graph *g, int main_node, int secondary_node, int c, int weight){
     if ((i = contains(secondary_node, g->nodes, c)) == -1){
         node_2 = create_Node(secondary_node);
         g->nodes[c] =node_2;
-        g->nodes[c]->links =malloc((g->n)* sizeof(struct Node *));
-        g->nodes[c]->edges = malloc((g->n)*sizeof(struct Edge*));
+        g->nodes[c]->links =malloc(1* sizeof(struct Node *));
+        g->nodes[c]->edges = malloc(1* sizeof(struct Edge *));
         c++;
         added_nodes++;
     }else{
