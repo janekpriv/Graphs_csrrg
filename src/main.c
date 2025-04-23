@@ -6,6 +6,8 @@
 #include "../lib/graph.h"
 #include "../lib/louvian.h"
 
+
+
 int main(int argc, char **argv){
     Graph *g = generate_graph_from_csrrg(argv[1]);
     if (!g){
@@ -15,13 +17,15 @@ int main(int argc, char **argv){
     sort_graph(g); 
     //puts("Finished generation of initial graph");
     
-
+    
     int ncomm = 0;
     ncomm = louvain(g);
     if (ncomm != 3)
-     merge_to_three_communities(g, ncomm);
+        merge_to_three_communities(g);
     printf("Final modularity: %lf\n", get_modularity(g));
-    
+    //print_communities(g);
     save_list_repr(g);
     free_graph(g);
 }
+
+

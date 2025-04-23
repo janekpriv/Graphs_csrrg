@@ -240,10 +240,10 @@ int find_largest_community(Graph *g) {
 }
 
 
-void relocate_solitary_nodes(Graph *g, int comm_num){
+void relocate_solitary_nodes(Graph *g){
     for (int i = 0; i < g->n; i++) {
         Node node = g->nodes[i];
-        for (int j = 0; j < comm_num; j++){
+        for (int j = 0; j < g->ncomm; j++){
             bool found = false;
             if (node->comm == j){
                 // check if the node has neighbors (atleast one) that share the same community
@@ -368,7 +368,7 @@ void remap(Graph *g){
 
 // Adjusts Louvain result by merging communities to yield exactly 3,
 // optimizing for max modularity gain during each merge.
-void merge_to_three_communities(Graph *g, int comm_count){
+void merge_to_three_communities(Graph *g){
 
     #ifdef DEBUG
         puts("Begin merging graph");
@@ -376,10 +376,10 @@ void merge_to_three_communities(Graph *g, int comm_count){
     
     int K = 3; // desired communities count
 
-    relocate_solitary_nodes(g, comm_count); // maybe unnecessary
+    relocate_solitary_nodes(g); // maybe unnecessary
 
-    while (comm_count != K) {
-        if (comm_count > K) {
+    while (g->ncomm != K) {
+        if (g->ncomm > K) {
             // Find the pair to merge based on the best delta Q
             int comm1, comm2;
             find_merge_pair(g, &comm1, &comm2, K); 
@@ -389,9 +389,9 @@ void merge_to_three_communities(Graph *g, int comm_count){
                 change_communities(g, comm1, comm2);
                 remap(g);
    
-                comm_count--; // Decrease community count after merging
+                g->ncomm--; // Decrease community count after merging
                 #ifdef DEBUG
-                    printf("Merged %d into %d, new count: %d\n", comm1, comm2, comm_count);
+                    printf("Merged %d into %d, new count: %d\n", comm1, comm2, g->ncomm);
                 #endif
             }
         }/* else if (comm_count < desired_k) {
