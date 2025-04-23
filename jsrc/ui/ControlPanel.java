@@ -2,6 +2,7 @@ package ui;
 import core.GraphPartitioner;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -30,6 +31,7 @@ public class ControlPanel {
 
         // CardLayout container
         JPanel cardPanel = new JPanel(new CardLayout());
+        cardPanel.setBackground(Color.WHITE); 
 
         // Create panels
         JPanel mainPanel = createMainPanel(frame, cardPanel);
@@ -122,34 +124,46 @@ public class ControlPanel {
 
     public static JPanel createHelpPanel(JPanel cardPanel) {
         JPanel panel = new JPanel(new BorderLayout());
-
+        //panel.setBackground(Color.WHITE); 
+    
         String htmlContent = """
             <html>
-                <h1>Podział grafu</h1>
-                <p>Ten program rozwiązuje problem podziału ogólnokrajowej sieci logistycznej 
-                firmy kurierskiej na trzy niezależne regiony operacyjne.</p>
-                <p><img src='file:res/graph_partitioning.gif' width='300'></p>
-                <p><i>Kliknij 'File > Load File' aby rozpocząć.</i></p>
+                <body style='background-color:white; text-align: center; font-family: sans-serif;'>
+                    <h1>Podział grafu</h1>
+                    <p>Ten program rozwiązuje problem podziału ogólnokrajowej sieci logistycznej
+                    firmy kurierskiej na trzy niezależne regiony operacyjne.</p>
+                    <p>Podział grafu wykonywany jest za pomocą algorytmu Louvain, który identyfikuje społeczności w grafie, minimalizując połączenia między nimi.</p>
+                    <p><img src='file:res/louvain_part.gif' width='600' height='600'></p>
+                    <p><i>Aby rozpocząć, kliknij w menu: <b>File > Load File</b>.</i></p>
+                </body>
             </html>
             """;
-
+    
         JLabel label = new JLabel(htmlContent);
         label.setVerticalAlignment(SwingConstants.TOP);
+        label.setOpaque(true);
+        label.setBackground(Color.WHITE);
+    
         JScrollPane scrollPane = new JScrollPane(label);
-
-        JButton backButton = new JButton("← Back");
+        scrollPane.setBackground(Color.WHITE);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setBorder(null); // opcjonalnie, jeśli chcesz usunąć obramowanie
+    
+        JButton backButton = new JButton("← Wstecz");
         backButton.addActionListener(e -> {
             CardLayout cl = (CardLayout) cardPanel.getLayout();
             cl.show(cardPanel, MAIN_PANEL);
         });
-
+    
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topBar.add(backButton);
-
+        topBar.setBackground(Color.WHITE);
+    
         panel.add(topBar, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
+    
 
     public static JMenuBar setupMenuBar(JPanel cardPanel, JFrame frame){
         JMenuBar mb = new JMenuBar();
