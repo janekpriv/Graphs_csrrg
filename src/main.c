@@ -11,7 +11,7 @@
 int main(int argc, char **argv){
     Graph *g = generate_graph_from_csrrg(argv[1]);
     if (!g){
-        perror("Error generating initial graph ");
+        fprintf(stderr, "Failed to generate initial graph\n");
         return -1;
     }
     sort_graph(g); 

@@ -20,8 +20,6 @@ int get_number_of_nodes(char *a_r){
 }
 
 Graph *generate_graph_from_csrrg(char* filename){
-
-
     char *r = NULL;
     char *positions = NULL;
     char *a_r = NULL;
@@ -32,16 +30,23 @@ Graph *generate_graph_from_csrrg(char* filename){
 
     FILE *in = fopen(filename, "r");
     if(in == NULL){
-        fprintf(stderr, "[!] there was a problem with loading a file %s\n", filename);
+        fprintf(stderr, "There was a problem with loading a file %s\n", filename);
         return NULL;
     }
 
-    getline(&r, &len, in);
-    getline(&positions, &len, in);
-    getline(&a_r, &len, in);
-    getline(&edges_l, &len, in);
-    getline(&edges_offset, &len, in);
+    if (getline(&r, &len, in) == -1 ||
+        getline(&positions, &len, in) == -1 ||
+        getline(&a_r, &len, in) == -1 ||
+        getline(&edges_l, &len, in) == -1 ||
+        getline(&edges_offset, &len, in) == -1) {
+        
+        fprintf(stderr, "Input file is missing required lines or is empty: %s\n", filename);
+        fclose(in);
+        return NULL;
+    }
 
+    fclose(in);
+    
 
     int cols = atoi(r) - 1;  // actual number of columns is n-1
 
