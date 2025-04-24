@@ -11,6 +11,7 @@ public class GraphPartitioner {
     public static Process partitionProcess; // To store the running process
 
     private static boolean wasCancelled = false;
+    private static int exitCode;
 
     public static void runGraphPart(String filePath, final JLabel mainLabel, JButton stopButton, JButton downloadButton) {
         wasCancelled = false; // reset before running
@@ -18,30 +19,39 @@ public class GraphPartitioner {
         SwingWorker<Void, String> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() throws Exception {
-                //publish("Processing...");
                 ProcessBuilder builder = new ProcessBuilder("./program", filePath);
                 partitionProcess = builder.start();
-
+        
                 SwingUtilities.invokeLater(() -> stopButton.setVisible(true));
-
-                int exitCode = partitionProcess.waitFor();
-
+        
+                // Read stderr in parallel while process is running
+                BufferedReader errorReader = new BufferedReader(
+                    new InputStreamReader(partitionProcess.getErrorStream()));
+                StringBuilder errorOutput = new StringBuilder();
+        
+                // Read error output BEFORE waiting for the process
+                String line;
+                while ((line = errorReader.readLine()) != null) {
+                    errorOutput.append(line).append("\n");
+                }
+        
+                // Now wait for process to finish
+                exitCode = partitionProcess.waitFor();
+        
                 if (wasCancelled) {
-                    publish("Process cancelled.");
+                    publish("Partitioning cancelled.");
                 } else if (exitCode != 0) {
-                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(partitionProcess.getErrorStream()));
-                    StringBuilder errorOutput = new StringBuilder();
-                    String line;
-                    while ((line = errorReader.readLine()) != null) {
-                        errorOutput.append(line).append("\n");
-                    }
+                    System.out.println("Exit code: " + exitCode);
+                    System.out.println("Error output:\n" + errorOutput);
+
                     publish("Error: " + errorOutput.toString());
+        
                 } else {
                     publish("Partitioning Complete.");
                 }
-
+        
                 return null;
-            }
+            }       
 
             @Override
             protected void process(java.util.List<String> chunks) {
@@ -60,7 +70,7 @@ public class GraphPartitioner {
                 }
                 
                 // Once he process finishes, show the "Download" buttont
-                if (wasCancelled == false)
+                if (wasCancelled == false && exitCode == 0 )
                     downloadButton.setVisible(true);  // Make the download button visible after processing
                 stopButton.setVisible(false);    // Hide the stop button after processing
             }

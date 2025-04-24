@@ -1,12 +1,12 @@
 package ui;
 import javax.swing.*;
 
-public class MainWindow{
+public class Window{
 
     public static void createWindow(){
         JFrame frame = new JFrame("Graph Partitioning");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        ControlPanel.setupControlPanel(frame);
+        Panel.setupPanel(frame);
         frame.setSize(900, 900);
         frame.setLocationRelativeTo(null);
         

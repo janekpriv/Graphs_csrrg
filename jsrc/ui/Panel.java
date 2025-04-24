@@ -5,6 +5,7 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.WindowAdapter;
@@ -18,7 +19,9 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 
-public class ControlPanel {
+public class Panel {
+    private Panel() {} // prevent from making an instance
+
     private static final String MAIN_PANEL = "MainPanel";
     private static final String HELP_PANEL = "HelpPanel";
     private static JLabel mainLabel = new JLabel("Load .csrrg file");
@@ -26,12 +29,9 @@ public class ControlPanel {
     private static JButton downloadButton;
 
 
-    public static void setupControlPanel(final JFrame frame){
-        
-
+    public static void setupPanel(final JFrame frame){
         // CardLayout container
         JPanel cardPanel = new JPanel(new CardLayout());
-        cardPanel.setBackground(Color.WHITE); 
 
         // Create panels
         JPanel mainPanel = createMainPanel(frame, cardPanel);
@@ -43,10 +43,8 @@ public class ControlPanel {
 
         JMenuBar mb = setupMenuBar(cardPanel, frame);
         
-      
         frame.setJMenuBar(mb);
         frame.getContentPane().add(cardPanel);
-
 
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -58,20 +56,15 @@ public class ControlPanel {
                 System.exit(0); // Exit the program after stopping the process
             }
         });
-        /* 
-        
-        frame.getContentPane().add(panel, BorderLayout.CENTER);    
-        frame.getContentPane().add(BorderLayout.NORTH, mb);
-
-        */
+    
     }
 
     
-
+    
+    
     public static JPanel createMainPanel(JFrame frame, JPanel cardPanel) {
-        
         JPanel panel = new JPanel(new GridBagLayout());
-
+        panel.setBackground(Color.WHITE); 
         // Create constraints to align components within the GridBagLayout
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;  // Center the components in the X axis
@@ -79,6 +72,8 @@ public class ControlPanel {
         gbc.anchor = GridBagConstraints.CENTER;  // Center components horizontally and vertically
 
         // Add the mainLabel to the panel
+        mainLabel.setFont(new Font("SansSerif", Font.PLAIN, 24)); 
+
         panel.add(mainLabel, gbc);
 
         // Add some space between the mainLabel and the buttons
@@ -86,7 +81,7 @@ public class ControlPanel {
         panel.add(Box.createVerticalStrut(10), gbc);
 
         // Create and configure the stopButton
-        stopButton = new JButton("Stop Process");
+        stopButton = new JButton("Cancel");
         stopButton.setVisible(false);  // Initially hide the button
         gbc.gridy++;
         panel.add(stopButton, gbc);  // Add stopButton under the mainLabel
@@ -106,10 +101,9 @@ public class ControlPanel {
             folderChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             folderChooser.setAcceptAllFileFilterUsed(false);
 
-            int returnValue = folderChooser.showSaveDialog(frame); // Make sure to pass the frame here
+            int returnValue = folderChooser.showSaveDialog(frame); 
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File targetFolder = folderChooser.getSelectedFile();
-                // Call the method to handle the downloading of the latest folder, passing the frame
                 handleDownloadOfLatestFolder(frame, targetFolder);
             }
             });
@@ -124,47 +118,57 @@ public class ControlPanel {
 
     public static JPanel createHelpPanel(JPanel cardPanel) {
         JPanel panel = new JPanel(new BorderLayout());
-        //panel.setBackground(Color.WHITE); 
-    
+        
         String htmlContent = """
             <html>
-                <body style='background-color:white; text-align: center; font-family: sans-serif;'>
+                
                     <h1>Podział grafu</h1>
                     <p>Ten program rozwiązuje problem podziału ogólnokrajowej sieci logistycznej
                     firmy kurierskiej na trzy niezależne regiony operacyjne.</p>
-                    <p>Podział grafu wykonywany jest za pomocą algorytmu Louvain, który identyfikuje społeczności w grafie, minimalizując połączenia między nimi.</p>
-                    <p><img src='file:res/louvain_part.gif' width='600' height='600'></p>
-                    <p><i>Aby rozpocząć, kliknij w menu: <b>File > Load File</b>.</i></p>
+                    <p> </p>
+                    <p>Podział grafu wykonywany jest za pomocą algorytmu <b>Louvain</b>, który identyfikuje społeczności w grafie, minimalizując połączenia między nimi.</p>
+                    <p><img src='file:res/louvain_partr.gif'></p>
+                    <p><i>Ilustracja działania algorytmu Louvain</i></p>
+                    <p> </p>
+                    <p> </p>
+                    <p>Aby rozpocząć, kliknij w menu: <b>File > Load File</b>.</p>
                 </body>
             </html>
             """;
-    
+
         JLabel label = new JLabel(htmlContent);
+        label.setFont(new Font("SansSerif", Font.PLAIN, 16)); 
         label.setVerticalAlignment(SwingConstants.TOP);
         label.setOpaque(true);
         label.setBackground(Color.WHITE);
-    
-        JScrollPane scrollPane = new JScrollPane(label);
-        scrollPane.setBackground(Color.WHITE);
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setBorder(null); // opcjonalnie, jeśli chcesz usunąć obramowanie
-    
+        
+        // Use GridBagLayout for centering the label
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        centerPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;  // Center the label
+        centerPanel.add(label, gbc);  // Directly add the label instead of scrollPane
+        
+        // Create the back button
         JButton backButton = new JButton("← Wstecz");
         backButton.addActionListener(e -> {
             CardLayout cl = (CardLayout) cardPanel.getLayout();
             cl.show(cardPanel, MAIN_PANEL);
         });
-    
+        
+        // Create the top bar with back button
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topBar.add(backButton);
         topBar.setBackground(Color.WHITE);
-    
+        
         panel.add(topBar, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);  // Use centerPanel to center the label
         return panel;
     }
     
-
+    
     public static JMenuBar setupMenuBar(JPanel cardPanel, JFrame frame){
         JMenuBar mb = new JMenuBar();
 
@@ -221,7 +225,6 @@ public class ControlPanel {
                 // Copy the file to input/ (overwrite if exists)
                 Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                // Optionally run your C logic here using the file name
                 GraphPartitioner.runGraphPart(targetPath.toString(), mainLabel, stopButton, downloadButton);
 
             } catch (Exception ex) {
@@ -230,7 +233,7 @@ public class ControlPanel {
             }
 
         } else {
-            mainLabel.setText("Open command canceled");
+            //mainLabel.setText("Open command canceled");
         }
     }
 
