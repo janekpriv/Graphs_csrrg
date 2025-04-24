@@ -41,9 +41,6 @@ public class GraphPartitioner {
                 if (wasCancelled) {
                     publish("Partitioning cancelled.");
                 } else if (exitCode != 0) {
-                    System.out.println("Exit code: " + exitCode);
-                    System.out.println("Error output:\n" + errorOutput);
-
                     publish("Error: " + errorOutput.toString());
         
                 } else {

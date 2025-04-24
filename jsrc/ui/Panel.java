@@ -237,9 +237,6 @@ public class Panel {
         }
     }
 
-
-
-    // Method to handle the download of the latest folder
     private static void handleDownloadOfLatestFolder(JFrame frame, File targetFolder) {
         try {
             File outputDir = new File("output");
@@ -274,7 +271,6 @@ public class Panel {
         }
     }
     
-    // Change getLatestFolder and copyDirectory methods to static as well
     private static File getLatestFolder(File outputDir) {
         File[] folders = outputDir.listFiles(File::isDirectory); // Get all directories in the output folder
         if (folders == null || folders.length == 0) {
