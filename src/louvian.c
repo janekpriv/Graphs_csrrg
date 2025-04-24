@@ -126,33 +126,7 @@ int count_communities(Graph* g){
 double time1, timedif;
 
 
-void print_communities(Graph * g){
-    FILE *file = fopen("./output/communities", "w");
 
-    int c = g->ncomm;
-    int assigned_nodes = 0;
-    printf("Total communities: %d\n", c);
-    if(file)
-        fprintf(file, "Total communities: %d\n", c);
-    for (int i = 0; i < c; i++){
-        if (file)
-            fprintf(file, "Community %d: ", i);
-        int comm_size = 0;
-        for (int j = 0; j < g->n; j++){
-            if (g->nodes[j]->comm == i){
-                if (file)
-                    fprintf(file," %d ", j);
-                comm_size++;
-                assigned_nodes++;
-            }
-        }
-        if (file)
-            fprintf(file,"\n");
-    }
-    if (file)
-    fprintf(file, "Total assigned nodes: %d out of %d\n\n", assigned_nodes, g->n);
-    fclose(file);
-}
 
 #include <limits.h>
 // Find pair of communities to merge (simplest: smallest sizes)

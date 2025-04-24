@@ -93,6 +93,37 @@ void print_list_repr(Graph *g){
     fclose(out);
 }
 
+void print_communities(Graph * g){
+
+    char outfile[30];
+    sprintf(outfile, "./output/pg%dx%d/communities", g->n, g->e);
+    FILE *file = fopen(outfile, "w");
+
+    int c = g->ncomm;
+    int assigned_nodes = 0;
+    //printf("Total communities: %d\n", c);
+    if(file)
+        //fprintf(file, "Total communities: %d\n", c);
+    for (int i = 0; i < c; i++){
+        if (file)
+            fprintf(file, "Community %d: ", i);
+        int comm_size = 0;
+        for (int j = 0; j < g->n; j++){
+            if (g->nodes[j]->comm == i){
+                if (file)
+                    fprintf(file," %d ", j);
+                comm_size++;
+                assigned_nodes++;
+            }
+        }
+        if (file)
+            fprintf(file,"\n");
+    }
+    if (file)
+    //fprintf(file, "Total assigned nodes: %d out of %d\n\n", assigned_nodes, g->n);
+    fclose(file);
+}
+
 save_list_repr(Graph *g){
     int PARTS = 3;
     char folder[30];
@@ -128,6 +159,7 @@ save_list_repr(Graph *g){
             }
             
         }
+        print_communities(g);
         fclose(out);
     }
     
