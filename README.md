@@ -1,6 +1,6 @@
-# Graphs_csrrg
+# Louvain-clustering
 
-Projekt **Graphs_csrrg** to implementacja narzędzi i algorytmów grafowych napisana w języku **C**. Repozytorium zawiera kod źródłowy, pliki wejściowe oraz skrypt kompilacji oparty o Makefile.
+Projekt **louvain-clustering* to implementacja narzędzi i algorytmów grafowych napisana w języku **C**. Repozytorium zawiera kod źródłowy, pliki wejściowe oraz skrypt kompilacji oparty o Makefile.
 
 ## Struktura projektu
 
